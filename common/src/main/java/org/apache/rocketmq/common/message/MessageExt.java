@@ -21,37 +21,93 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+
 import org.apache.rocketmq.common.TopicFilterType;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
 
+/**
+ * {@link Message} 的扩展消息类
+ *
+ * @author itlemon
+ */
 public class MessageExt extends Message {
     private static final long serialVersionUID = 5720810158625748049L;
 
+    /**
+     * 传送消息的Broker的名称
+     */
     private String brokerName;
 
+    /**
+     * 记录MessageQueue编号，消息会被发送到Topic下的MessageQueue
+     */
     private int queueId;
 
+    /**
+     * 记录消息在Broker存盘大小，这个字段决定最大消息量
+     */
     private int storeSize;
 
+    /**
+     * 记录在ConsumeQueue中的偏移
+     */
     private long queueOffset;
+
+    /**
+     * 记录一些系统标志的开关状态，MessageSysFlag中定义了系统标识
+     */
     private int sysFlag;
+
+    /**
+     * 消息创建时间，在Producer发送消息时设置
+     */
     private long bornTimestamp;
+
+    /**
+     * 消息创建地，记录了当前Producer的IP地址
+     */
     private SocketAddress bornHost;
 
+    /**
+     * 存储消息的时刻
+     */
     private long storeTimestamp;
+
+    /**
+     * 记录存储该消息的Broker地址
+     */
     private SocketAddress storeHost;
+
+    /**
+     * 消息ID
+     */
     private String msgId;
+
+    /**
+     * 记录在Broker中存储偏移
+     */
     private long commitLogOffset;
+
+    /**
+     * 消息内容CRC校验值
+     */
     private int bodyCRC;
+
+    /**
+     * 消息重试消费次数
+     */
     private int reconsumeTimes;
 
+    /**
+     * 事务详细相关字段
+     */
     private long preparedTransactionOffset;
 
     public MessageExt() {
     }
 
     public MessageExt(int queueId, long bornTimestamp, SocketAddress bornHost, long storeTimestamp,
-        SocketAddress storeHost, String msgId) {
+            SocketAddress storeHost, String msgId) {
         this.queueId = queueId;
         this.bornTimestamp = bornTimestamp;
         this.bornHost = bornHost;
@@ -193,9 +249,13 @@ public class MessageExt extends Message {
         this.sysFlag = sysFlag;
     }
 
-    public void setStoreHostAddressV6Flag() { this.sysFlag = this.sysFlag | MessageSysFlag.STOREHOSTADDRESS_V6_FLAG; }
+    public void setStoreHostAddressV6Flag() {
+        this.sysFlag = this.sysFlag | MessageSysFlag.STOREHOSTADDRESS_V6_FLAG;
+    }
 
-    public void setBornHostV6Flag() { this.sysFlag = this.sysFlag | MessageSysFlag.BORNHOST_V6_FLAG; }
+    public void setBornHostV6Flag() {
+        this.sysFlag = this.sysFlag | MessageSysFlag.BORNHOST_V6_FLAG;
+    }
 
     public int getBodyCRC() {
         return bodyCRC;
@@ -247,11 +307,12 @@ public class MessageExt extends Message {
 
     @Override
     public String toString() {
-        return "MessageExt [brokerName=" + brokerName + ", queueId=" + queueId + ", storeSize=" + storeSize + ", queueOffset=" + queueOffset
-            + ", sysFlag=" + sysFlag + ", bornTimestamp=" + bornTimestamp + ", bornHost=" + bornHost
-            + ", storeTimestamp=" + storeTimestamp + ", storeHost=" + storeHost + ", msgId=" + msgId
-            + ", commitLogOffset=" + commitLogOffset + ", bodyCRC=" + bodyCRC + ", reconsumeTimes="
-            + reconsumeTimes + ", preparedTransactionOffset=" + preparedTransactionOffset
-            + ", toString()=" + super.toString() + "]";
+        return "MessageExt [brokerName=" + brokerName + ", queueId=" + queueId + ", storeSize=" + storeSize
+                + ", queueOffset=" + queueOffset
+                + ", sysFlag=" + sysFlag + ", bornTimestamp=" + bornTimestamp + ", bornHost=" + bornHost
+                + ", storeTimestamp=" + storeTimestamp + ", storeHost=" + storeHost + ", msgId=" + msgId
+                + ", commitLogOffset=" + commitLogOffset + ", bodyCRC=" + bodyCRC + ", reconsumeTimes="
+                + reconsumeTimes + ", preparedTransactionOffset=" + preparedTransactionOffset
+                + ", toString()=" + super.toString() + "]";
     }
 }

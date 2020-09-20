@@ -18,8 +18,15 @@ package org.apache.rocketmq.common.message;
 
 import java.util.HashSet;
 
+/**
+ * @author itlemon
+ */
 public class MessageConst {
     public static final String PROPERTY_KEYS = "KEYS";
+
+    /**
+     * 消息标签在Map中的键，用于在Map中存储消息标签
+     */
     public static final String PROPERTY_TAGS = "TAGS";
     public static final String PROPERTY_WAIT_STORE_MSG_OK = "WAIT";
     public static final String PROPERTY_DELAY_TIME_LEVEL = "DELAY";
@@ -55,7 +62,7 @@ public class MessageConst {
 
     public static final String KEY_SEPARATOR = " ";
 
-    public static final HashSet<String> STRING_HASH_SET = new HashSet<String>();
+    public static final HashSet<String> STRING_HASH_SET = new HashSet<>();
 
     static {
         STRING_HASH_SET.add(PROPERTY_TRACE_SWITCH);
@@ -89,4 +96,12 @@ public class MessageConst {
         STRING_HASH_SET.add(PROPERTY_CLUSTER);
         STRING_HASH_SET.add(PROPERTY_MESSAGE_TYPE);
     }
+
+    /**
+     * 添加一个私有构造方法，防止被实例化
+     */
+    private MessageConst() {
+        throw new IllegalStateException("RocketMQ message constant cannot be instantiated.");
+    }
+
 }

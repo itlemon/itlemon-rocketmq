@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.common.message;
 
+/**
+ * @author itlemon
+ */
 public class MessageClientExt extends MessageExt {
 
     public String getOffsetMsgId() {
@@ -36,6 +39,7 @@ public class MessageClientExt extends MessageExt {
         }
     }
 
+    @Override
     public void setMsgId(String msgId) {
         //DO NOTHING
         //MessageClientIDSetter.setUniqID(this);

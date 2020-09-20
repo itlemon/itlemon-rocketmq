@@ -16,7 +16,13 @@
  */
 package org.apache.rocketmq.common;
 
+/**
+ * @author itlemon
+ */
 public enum TopicFilterType {
+    /**
+     * Topic中的标签，消费者在订阅的时候可以订阅单标签，也可以订阅多标签
+     */
     SINGLE_TAG,
     MULTI_TAG
 
