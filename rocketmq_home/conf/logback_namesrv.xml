@@ -17,10 +17,11 @@
   -->
 
 <configuration>
+    <!-- 自定义配置 -->
+    <property name="user.home" value="/Users/itlemon/IdeaProjects/itlemon-rocketmq/rocketmq_home"/>
+
     <appender name="DefaultAppender"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 自定义用户目录 -->
-        <user.home>/Users/itlemon/IdeaProjects/itlemon-rocketmq/namesrv</user.home>
 
         <file>${user.home}/logs/rocketmqlogs/namesrv_default.log</file>
         <append>true</append>
@@ -30,7 +31,7 @@
             <maxIndex>5</maxIndex>
         </rollingPolicy>
         <triggeringPolicy
-            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>100MB</maxFileSize>
         </triggeringPolicy>
         <encoder>
@@ -49,7 +50,7 @@
             <maxIndex>5</maxIndex>
         </rollingPolicy>
         <triggeringPolicy
-            class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
             <maxFileSize>100MB</maxFileSize>
         </triggeringPolicy>
         <encoder>
