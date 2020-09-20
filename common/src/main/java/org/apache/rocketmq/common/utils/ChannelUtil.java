@@ -18,10 +18,18 @@
 package org.apache.rocketmq.common.utils;
 
 import io.netty.channel.Channel;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+/**
+ * @author itlemon
+ */
 public class ChannelUtil {
+
+    private ChannelUtil() {
+    }
+
     public static String getRemoteIp(Channel channel) {
         InetSocketAddress inetSocketAddress = (InetSocketAddress) channel.remoteAddress();
         if (inetSocketAddress == null) {
