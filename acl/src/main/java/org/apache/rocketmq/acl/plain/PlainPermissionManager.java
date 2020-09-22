@@ -50,7 +50,7 @@ public class PlainPermissionManager {
 
     private String fileName = System.getProperty("rocketmq.acl.plain.file", DEFAULT_PLAIN_ACL_FILE);
 
-    private  Map<String/** AccessKey **/, PlainAccessResource> plainAccessResourceMap = new HashMap<>();
+    private  Map<String/* AccessKey **/, PlainAccessResource> plainAccessResourceMap = new HashMap<>();
 
     private  List<RemoteAddressStrategy> globalWhiteRemoteAddressStrategy = new ArrayList<>();
 

@@ -124,7 +124,7 @@ public class PlainAccessValidator implements AccessValidator {
         }
 
         // Content
-        SortedMap<String, String> map = new TreeMap<String, String>();
+        SortedMap<String, String> map = new TreeMap<>();
         for (Map.Entry<String, String> entry : request.getExtFields().entrySet()) {
             if (!SessionCredentials.SIGNATURE.equals(entry.getKey())
                     && !MixAll.UNIQUE_MSG_QUERY_FLAG.equals(entry.getKey())) {
@@ -146,8 +146,8 @@ public class PlainAccessValidator implements AccessValidator {
     }
 
     @Override
-    public boolean deleteAccessConfig(String accesskey) {
-        return aclPlugEngine.deleteAccessConfig(accesskey);
+    public boolean deleteAccessConfig(String accessKey) {
+        return aclPlugEngine.deleteAccessConfig(accessKey);
     }
 
     @Override public String getAclConfigVersion() {

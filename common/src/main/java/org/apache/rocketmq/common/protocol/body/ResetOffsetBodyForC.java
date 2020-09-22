@@ -21,6 +21,9 @@ import java.util.List;
 import org.apache.rocketmq.common.message.MessageQueueForC;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+/**
+ * @author itlemon
+ */
 public class ResetOffsetBodyForC extends RemotingSerializable {
 
     private List<MessageQueueForC> offsetTable;
