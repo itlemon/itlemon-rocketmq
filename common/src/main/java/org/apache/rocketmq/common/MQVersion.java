@@ -39,6 +39,10 @@ public class MQVersion {
     }
 
     public enum Version {
+
+        /**
+         * MQ各种版本
+         */
         V3_0_0_SNAPSHOT,
         V3_0_0_ALPHA1,
         V3_0_0_BETA1,

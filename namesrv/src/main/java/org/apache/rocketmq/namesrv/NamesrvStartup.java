@@ -19,12 +19,14 @@ package org.apache.rocketmq.namesrv;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
+
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -42,6 +44,8 @@ import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.LoggerFactory;
 
 /**
+ * NameServer启动入口类
+ *
  * @author itlemon
  */
 public class NamesrvStartup {
@@ -59,7 +63,8 @@ public class NamesrvStartup {
         try {
             NamesrvController controller = createNamesrvController(args);
             start(controller);
-            String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+            String tip = "The Name Server boot success. serializeType=" + RemotingCommand
+                    .getSerializeTypeConfigInThisServer();
             log.info(tip);
             System.out.printf("%s%n", tip);
             return controller;
@@ -71,6 +76,14 @@ public class NamesrvStartup {
         return null;
     }
 
+    /**
+     * 创建一个Name Server Controller
+     *
+     * @param args 命令行参数
+     * @return Name Server Controller对象
+     * @throws IOException IO异常
+     * @throws JoranException Joran异常
+     */
     public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
         //PackageConflictDetect.detectFastjson();
@@ -111,7 +124,10 @@ public class NamesrvStartup {
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
         if (null == namesrvConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
+            System.out
+                    .printf("Please set the %s variable in your environment to match the location of the RocketMQ "
+                                    + "installation%n",
+                            MixAll.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
 
