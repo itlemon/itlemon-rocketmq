@@ -61,8 +61,11 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
-            // 第一步：根据命令行参数创建一个NamesrvController对象
+            // 第一步：根据命令行参数创建一个NamesrvController对象，内部包含各种参数加载设置等操作
+            // 并设置了namesrv的启动端口
             NamesrvController controller = createNamesrvController(args);
+
+            // 第二步：启动controller
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand
                     .getSerializeTypeConfigInThisServer();
@@ -143,6 +146,7 @@ public class NamesrvStartup {
             System.exit(-2);
         }
 
+        // 自定义日志配置logback_namesrv.xml，可以了解博文(https://www.jianshu.com/p/3b9cb5e22052)来理解日志的配置加载
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
@@ -154,14 +158,22 @@ public class NamesrvStartup {
         MixAll.printObjectProperties(log, namesrvConfig);
         MixAll.printObjectProperties(log, nettyServerConfig);
 
+        // 根据namesrvConfig, nettyServerConfig来创建一个NamesrvController对象
         final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
-        // remember all configs to prevent discard
+        // 将属性集合properties保存到controller的configuration属性中
         controller.getConfiguration().registerConfig(properties);
 
         return controller;
     }
 
+    /**
+     * 启动controller方法，其中包括初始化controller、添加关机回调接口，最后是启动controller
+     *
+     * @param controller controller
+     * @return 返回启动后的controller
+     * @throws Exception 异常
+     */
     public static NamesrvController start(final NamesrvController controller) throws Exception {
 
         if (null == controller) {
