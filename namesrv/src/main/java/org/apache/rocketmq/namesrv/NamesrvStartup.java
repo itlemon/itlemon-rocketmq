@@ -61,6 +61,7 @@ public class NamesrvStartup {
     public static NamesrvController main0(String[] args) {
 
         try {
+            // 第一步：根据命令行参数创建一个NamesrvController对象
             NamesrvController controller = createNamesrvController(args);
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand
@@ -85,19 +86,26 @@ public class NamesrvStartup {
      * @throws JoranException Joran异常
      */
     public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
+        // 设置一个系统参数，key为rocketmq.remoting.version，当前版本值为：Version.V4_7_1，数值为355
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-        //PackageConflictDetect.detectFastjson();
 
+        // 构建-h 和 -n 的命令行参数option
         Options options = ServerUtil.buildCommandlineOptions(new Options());
+        // 解析完毕后的命令行参数
         commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
         if (null == commandLine) {
+            // 如果命令行参数为null，则退出虚拟机进程
             System.exit(-1);
             return null;
         }
 
+        // 分别创建namesrv和nettyServer的config对象
         final NamesrvConfig namesrvConfig = new NamesrvConfig();
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
+        // 设置netty监听9876端口，这就是为什么namesrv的默认端口是9876，这里可以改成其他端口
+        // 其实还可以修改上述命令行参数代码，自定义一个参数，用来设置监听端口，在启动的时候指定该参数
         nettyServerConfig.setListenPort(9876);
+        // 加载Name server config properties file
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
             if (file != null) {
@@ -114,6 +122,8 @@ public class NamesrvStartup {
             }
         }
 
+        // 如果在启动参数加上选项-p，那么将打印出namesrvConfig和nettyServerConfig的属性值信息
+        // 其中namesrvConfig主要配置了namesrv的信息，nettyServerConfig主要配置了netty的属性值信息
         if (commandLine.hasOption('p')) {
             InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
             MixAll.printObjectProperties(console, namesrvConfig);
@@ -121,8 +131,10 @@ public class NamesrvStartup {
             System.exit(0);
         }
 
+        // 填充命令行commandLine中参数到namesrvConfig中
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
+        // rocketmq_home默认来源于配置rocketmq.home.dir，如果没有配置，将从环境变量中获取ROCKETMQ_HOME参数
         if (null == namesrvConfig.getRocketmqHome()) {
             System.out
                     .printf("Please set the %s variable in your environment to match the location of the RocketMQ "
