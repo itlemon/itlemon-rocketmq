@@ -35,12 +35,28 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 public class NamesrvConfig {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
+    /**
+     * RocketMQ工作目录，用于存放配置文件等，可以通过
+     * -Drocketmq.home.dir=xxx或者通过环境变量ROCKETMQ_HOME来配置RocketMQ工作目录
+     */
     private String rocketmqHome =
             System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+
+    /**
+     * Name Server存储键值对配置属性的持久化路径，默认路径为user.home的所指代的路径，可以通过启动配置文件覆盖
+     */
     private String kvConfigPath =
             System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "kvConfig.json";
+
+    /**
+     * 默认配置文件路径，但是不会去主动加载这个配置文件，需要在Name Server启动的时候使用命令项-c指定该配置文件
+     */
     private String configStorePath =
             System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "namesrv.properties";
+
+    /**
+     *
+     */
     private String productEnvName = "center";
     private boolean clusterTest = false;
     private boolean orderMessageEnable = false;

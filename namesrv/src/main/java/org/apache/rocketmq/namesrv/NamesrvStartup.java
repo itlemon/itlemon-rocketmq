@@ -31,6 +31,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.constant.LoggerName;
@@ -92,7 +93,7 @@ public class NamesrvStartup {
         // 设置一个系统参数，key为rocketmq.remoting.version，当前版本值为：Version.V4_7_1，数值为355
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
-        // 构建-h 和 -n 的命令行参数option
+        // 构建-h 和 -n 的命令行参数option，并且自定义了一个P命令行参数，用于定义namesrv端口
         Options options = ServerUtil.buildCommandlineOptions(new Options());
         // 解析完毕后的命令行参数
         commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
@@ -107,7 +108,12 @@ public class NamesrvStartup {
         final NettyServerConfig nettyServerConfig = new NettyServerConfig();
         // 设置netty监听9876端口，这就是为什么namesrv的默认端口是9876，这里可以改成其他端口
         // 其实还可以修改上述命令行参数代码，自定义一个参数，用来设置监听端口，在启动的时候指定该参数
-        nettyServerConfig.setListenPort(9876);
+        String listenPort;
+        if (commandLine.hasOption('P') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('P')))) {
+            nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
+        } else {
+            nettyServerConfig.setListenPort(9876);
+        }
         // 加载Name server config properties file
         if (commandLine.hasOption('c')) {
             String file = commandLine.getOptionValue('c');
@@ -180,6 +186,7 @@ public class NamesrvStartup {
             throw new IllegalArgumentException("NamesrvController is null");
         }
 
+        // 第一步：进行controller的初始化工作
         boolean initResult = controller.initialize();
         if (!initResult) {
             controller.shutdown();
