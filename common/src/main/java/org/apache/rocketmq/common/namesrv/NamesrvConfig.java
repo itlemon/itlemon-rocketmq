@@ -55,10 +55,18 @@ public class NamesrvConfig {
             System.getProperty("user.home") + File.separator + "namesrv" + File.separator + "namesrv.properties";
 
     /**
-     *
+     * 产品环境名称
      */
     private String productEnvName = "center";
+
+    /**
+     * 是否开启测试集群模式，默认为false
+     */
     private boolean clusterTest = false;
+
+    /**
+     * 开启顺序消息，默认为false
+     */
     private boolean orderMessageEnable = false;
 
     public boolean isOrderMessageEnable() {
