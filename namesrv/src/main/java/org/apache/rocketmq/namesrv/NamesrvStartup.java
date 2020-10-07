@@ -188,16 +188,20 @@ public class NamesrvStartup {
 
         // 第一步：进行controller的初始化工作
         boolean initResult = controller.initialize();
+        // 如果初始化controller失败，则直接退出
         if (!initResult) {
+            // 关闭controller，释放资源
             controller.shutdown();
             System.exit(-3);
         }
 
+        // 第二步：注册钩子函数，当JVM正常退出的时候，将执行该钩子函数，执行关闭controller释放资源
         Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, (Callable<Void>) () -> {
             controller.shutdown();
             return null;
         }));
 
+        // 第三步：启动controller
         controller.start();
 
         return controller;

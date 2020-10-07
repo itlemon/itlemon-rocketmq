@@ -39,27 +39,64 @@ import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.srvutil.FileWatchService;
 
-
+/**
+ * NameServer的核心控制类
+ *
+ * @author itlemon
+ */
 public class NamesrvController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
+    /**
+     * Name Server配置属性
+     */
     private final NamesrvConfig namesrvConfig;
 
+    /**
+     * Netty Server配置属性
+     */
     private final NettyServerConfig nettyServerConfig;
 
+    /**
+     * Name Server控制器定时任务线程池
+     */
     private final ScheduledExecutorService scheduledExecutorService =
             Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
                     "NSScheduledThread"));
+
+    /**
+     * KV配置属性管理器，主要管理NameServer的配置
+     */
     private final KVConfigManager kvConfigManager;
+
+    /**
+     * Name Server数据的载体，记录Broker，Topic等信息
+     */
     private final RouteInfoManager routeInfoManager;
 
+    /**
+     * Netty服务类
+     */
     private RemotingServer remotingServer;
 
+    /**
+     *
+     */
     private BrokerHousekeepingService brokerHousekeepingService;
 
+    /**
+     * 执行Netty服务的线程池
+     */
     private ExecutorService remotingExecutor;
 
+    /**
+     *
+     */
     private Configuration configuration;
+
+    /**
+     *
+     */
     private FileWatchService fileWatchService;
 
     public NamesrvController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {

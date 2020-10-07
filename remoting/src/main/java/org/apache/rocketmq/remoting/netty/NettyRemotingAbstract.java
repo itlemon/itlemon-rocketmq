@@ -73,14 +73,14 @@ public abstract class NettyRemotingAbstract {
      * This map caches all on-going requests.
      */
     protected final ConcurrentMap<Integer /* opaque */, ResponseFuture> responseTable =
-        new ConcurrentHashMap<Integer, ResponseFuture>(256);
+            new ConcurrentHashMap<>(256);
 
     /**
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
      */
     protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
-        new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
+            new HashMap<>(64);
 
     /**
      * Executor to feed netty events to user defined {@link ChannelEventListener}.
@@ -100,7 +100,7 @@ public abstract class NettyRemotingAbstract {
     /**
      * custom rpc hooks
      */
-    protected List<RPCHook> rpcHooks = new ArrayList<RPCHook>();
+    protected List<RPCHook> rpcHooks = new ArrayList<>();
 
 
     static {
@@ -167,7 +167,7 @@ public abstract class NettyRemotingAbstract {
     }
 
     protected void doBeforeRpcHooks(String addr, RemotingCommand request) {
-        if (rpcHooks.size() > 0) {
+        if (!rpcHooks.isEmpty()) {
             for (RPCHook rpcHook: rpcHooks) {
                 rpcHook.doBeforeRequest(addr, request);
             }
@@ -175,7 +175,7 @@ public abstract class NettyRemotingAbstract {
     }
 
     protected void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response) {
-        if (rpcHooks.size() > 0) {
+        if (!rpcHooks.isEmpty()) {
             for (RPCHook rpcHook: rpcHooks) {
                 rpcHook.doAfterResponse(addr, request, response);
             }
@@ -195,49 +195,46 @@ public abstract class NettyRemotingAbstract {
         final int opaque = cmd.getOpaque();
 
         if (pair != null) {
-            Runnable run = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        doBeforeRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd);
-                        final RemotingResponseCallback callback = new RemotingResponseCallback() {
-                            @Override
-                            public void callback(RemotingCommand response) {
-                                doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);
-                                if (!cmd.isOnewayRPC()) {
-                                    if (response != null) {
-                                        response.setOpaque(opaque);
-                                        response.markResponseType();
-                                        try {
-                                            ctx.writeAndFlush(response);
-                                        } catch (Throwable e) {
-                                            log.error("process request over, but response failed", e);
-                                            log.error(cmd.toString());
-                                            log.error(response.toString());
-                                        }
-                                    } else {
+            Runnable run = () -> {
+                try {
+                    doBeforeRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd);
+                    final RemotingResponseCallback callback = new RemotingResponseCallback() {
+                        @Override
+                        public void callback(RemotingCommand response) {
+                            doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(ctx.channel()), cmd, response);
+                            if (!cmd.isOnewayRPC()) {
+                                if (response != null) {
+                                    response.setOpaque(opaque);
+                                    response.markResponseType();
+                                    try {
+                                        ctx.writeAndFlush(response);
+                                    } catch (Throwable e) {
+                                        log.error("process request over, but response failed", e);
+                                        log.error(cmd.toString());
+                                        log.error(response.toString());
                                     }
+                                } else {
                                 }
                             }
-                        };
-                        if (pair.getObject1() instanceof AsyncNettyRequestProcessor) {
-                            AsyncNettyRequestProcessor processor = (AsyncNettyRequestProcessor)pair.getObject1();
-                            processor.asyncProcessRequest(ctx, cmd, callback);
-                        } else {
-                            NettyRequestProcessor processor = pair.getObject1();
-                            RemotingCommand response = processor.processRequest(ctx, cmd);
-                            callback.callback(response);
                         }
-                    } catch (Throwable e) {
-                        log.error("process request exception", e);
-                        log.error(cmd.toString());
+                    };
+                    if (pair.getObject1() instanceof AsyncNettyRequestProcessor) {
+                        AsyncNettyRequestProcessor processor = (AsyncNettyRequestProcessor)pair.getObject1();
+                        processor.asyncProcessRequest(ctx, cmd, callback);
+                    } else {
+                        NettyRequestProcessor processor = pair.getObject1();
+                        RemotingCommand response = processor.processRequest(ctx, cmd);
+                        callback.callback(response);
+                    }
+                } catch (Throwable e) {
+                    log.error("process request exception", e);
+                    log.error(cmd.toString());
 
-                        if (!cmd.isOnewayRPC()) {
-                            final RemotingCommand response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR,
-                                RemotingHelper.exceptionSimpleDesc(e));
-                            response.setOpaque(opaque);
-                            ctx.writeAndFlush(response);
-                        }
+                    if (!cmd.isOnewayRPC()) {
+                        final RemotingCommand response = RemotingCommand.createResponseCommand(RemotingSysResponseCode.SYSTEM_ERROR,
+                            RemotingHelper.exceptionSimpleDesc(e));
+                        response.setOpaque(opaque);
+                        ctx.writeAndFlush(response);
                     }
                 }
             };
@@ -312,16 +309,13 @@ public abstract class NettyRemotingAbstract {
         ExecutorService executor = this.getCallbackExecutor();
         if (executor != null) {
             try {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            responseFuture.executeInvokeCallback();
-                        } catch (Throwable e) {
-                            log.warn("execute callback in executor exception, and callback throw", e);
-                        } finally {
-                            responseFuture.release();
-                        }
+                executor.submit(() -> {
+                    try {
+                        responseFuture.executeInvokeCallback();
+                    } catch (Throwable e) {
+                        log.warn("execute callback in executor exception, and callback throw", e);
+                    } finally {
+                        responseFuture.release();
                     }
                 });
             } catch (Exception e) {
@@ -351,7 +345,7 @@ public abstract class NettyRemotingAbstract {
      */
     @Deprecated
     protected RPCHook getRPCHook() {
-        if (rpcHooks.size() > 0) {
+        if (!rpcHooks.isEmpty()) {
             return rpcHooks.get(0);
         }
         return null;
@@ -381,7 +375,7 @@ public abstract class NettyRemotingAbstract {
      * </p>
      */
     public void scanResponseTable() {
-        final List<ResponseFuture> rfList = new LinkedList<ResponseFuture>();
+        final List<ResponseFuture> rfList = new LinkedList<>();
         Iterator<Entry<Integer, ResponseFuture>> it = this.responseTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<Integer, ResponseFuture> next = it.next();
@@ -413,21 +407,18 @@ public abstract class NettyRemotingAbstract {
             final ResponseFuture responseFuture = new ResponseFuture(channel, opaque, timeoutMillis, null, null);
             this.responseTable.put(opaque, responseFuture);
             final SocketAddress addr = channel.remoteAddress();
-            channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture f) throws Exception {
-                    if (f.isSuccess()) {
-                        responseFuture.setSendRequestOK(true);
-                        return;
-                    } else {
-                        responseFuture.setSendRequestOK(false);
-                    }
-
-                    responseTable.remove(opaque);
-                    responseFuture.setCause(f.cause());
-                    responseFuture.putResponse(null);
-                    log.warn("send a request command to channel <" + addr + "> failed.");
+            channel.writeAndFlush(request).addListener((ChannelFutureListener) f -> {
+                if (f.isSuccess()) {
+                    responseFuture.setSendRequestOK(true);
+                    return;
+                } else {
+                    responseFuture.setSendRequestOK(false);
                 }
+
+                responseTable.remove(opaque);
+                responseFuture.setCause(f.cause());
+                responseFuture.putResponse(null);
+                log.warn("send a request command to channel <" + addr + "> failed.");
             });
 
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);

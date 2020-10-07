@@ -31,7 +31,7 @@ import static org.apache.rocketmq.acl.common.SessionCredentials.SIGNATURE;
 public class AclClientRPCHook implements RPCHook {
     private final SessionCredentials sessionCredentials;
     protected ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]> fieldCache =
-        new ConcurrentHashMap<Class<? extends CommandCustomHeader>, Field[]>();
+            new ConcurrentHashMap<>();
 
     public AclClientRPCHook(SessionCredentials sessionCredentials) {
         this.sessionCredentials = sessionCredentials;
@@ -59,7 +59,7 @@ public class AclClientRPCHook implements RPCHook {
     protected SortedMap<String, String> parseRequestContent(RemotingCommand request, String ak, String securityToken) {
         CommandCustomHeader header = request.readCustomHeader();
         // Sort property
-        SortedMap<String, String> map = new TreeMap<String, String>();
+        SortedMap<String, String> map = new TreeMap<>();
         map.put(ACCESS_KEY, ak);
         if (securityToken != null) {
             map.put(SECURITY_TOKEN, securityToken);
