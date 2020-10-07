@@ -17,10 +17,12 @@
 
 package org.apache.rocketmq.common.protocol;
 
+/**
+ * 请求码
+ *
+ * @author itlemon
+ */
 public class RequestCode {
-
-    private RequestCode() {
-    }
 
     public static final int SEND_MESSAGE = 10;
 
