@@ -17,8 +17,14 @@
 package org.apache.rocketmq.common;
 
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+/**
+ * 数据版本
+ *
+ * @author itlemon
+ */
 public class DataVersion extends RemotingSerializable {
     private long timestamp = System.currentTimeMillis();
     private AtomicLong counter = new AtomicLong(0);
@@ -51,10 +57,12 @@ public class DataVersion extends RemotingSerializable {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         final DataVersion that = (DataVersion) o;
 
@@ -81,10 +89,8 @@ public class DataVersion extends RemotingSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DataVersion[");
-        sb.append("timestamp=").append(timestamp);
-        sb.append(", counter=").append(counter);
-        sb.append(']');
-        return sb.toString();
+        return "DataVersion[" + "timestamp=" + timestamp
+                + ", counter=" + counter
+                + ']';
     }
 }

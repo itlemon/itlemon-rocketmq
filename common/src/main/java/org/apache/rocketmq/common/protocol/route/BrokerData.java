@@ -21,11 +21,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+
 import org.apache.rocketmq.common.MixAll;
 
+/**
+ * Broker的基础信息
+ *
+ * @author itlemon
+ */
 public class BrokerData implements Comparable<BrokerData> {
+
+    /**
+     * 所属集群名称
+     */
     private String cluster;
+
+    /**
+     * Broker名称
+     */
     private String brokerName;
+
+    /**
+     * 主备Broker信息表，键为BrokerID，值为Broker的地址
+     */
     private HashMap<Long/* brokerId */, String/* broker address */> brokerAddrs;
 
     private final Random random = new Random();
@@ -50,7 +68,7 @@ public class BrokerData implements Comparable<BrokerData> {
         String addr = this.brokerAddrs.get(MixAll.MASTER_ID);
 
         if (addr == null) {
-            List<String> addrs = new ArrayList<String>(brokerAddrs.values());
+            List<String> addrs = new ArrayList<>(brokerAddrs.values());
             return addrs.get(random.nextInt(addrs.size()));
         }
 
@@ -84,23 +102,30 @@ public class BrokerData implements Comparable<BrokerData> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         BrokerData other = (BrokerData) obj;
         if (brokerAddrs == null) {
-            if (other.brokerAddrs != null)
+            if (other.brokerAddrs != null) {
                 return false;
-        } else if (!brokerAddrs.equals(other.brokerAddrs))
+            }
+        } else if (!brokerAddrs.equals(other.brokerAddrs)) {
             return false;
+        }
         if (brokerName == null) {
-            if (other.brokerName != null)
+            if (other.brokerName != null) {
                 return false;
-        } else if (!brokerName.equals(other.brokerName))
+            }
+        } else if (!brokerName.equals(other.brokerName)) {
             return false;
+        }
         return true;
     }
 
