@@ -21,11 +21,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+
 import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+/**
+ * 集群信息
+ *
+ * @author itlemon
+ */
 public class ClusterInfo extends RemotingSerializable {
+
+    /**
+     * Broker的基础信息表，键名是Broker的名称，BrokerData中存储了Broker的名称，
+     * 所属集群名称以及主Broker和备Broker的地址信息
+     */
     private HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
+
+    /**
+     * 集群与Broker名称的映射表，可以方便知道一个集群下有哪些Broker
+     */
     private HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
 
     public HashMap<String, BrokerData> getBrokerAddrTable() {
@@ -45,7 +60,7 @@ public class ClusterInfo extends RemotingSerializable {
     }
 
     public String[] retrieveAllAddrByCluster(String cluster) {
-        List<String> addrs = new ArrayList<String>();
+        List<String> addrs = new ArrayList<>();
         if (clusterAddrTable.containsKey(cluster)) {
             Set<String> brokerNames = clusterAddrTable.get(cluster);
             for (String brokerName : brokerNames) {

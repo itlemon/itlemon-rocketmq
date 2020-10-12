@@ -52,7 +52,11 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
  */
 public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
-    private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
+
+    /**
+     * Broker连接通道过期时间
+     */
+    private static final long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
@@ -61,7 +65,8 @@ public class RouteInfoManager {
     private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
 
     /**
-     * Broker的基础信息表，键名是Broker的名称，BrokerData中存储了Broker的名称，所属集群名称以及主Broker和备Broker的地址信息
+     * Broker的基础信息表，键名是Broker的名称，BrokerData中存储了Broker的名称，
+     * 所属集群名称以及主Broker和备Broker的地址信息
      */
     private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
 
@@ -71,12 +76,12 @@ public class RouteInfoManager {
     private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
 
     /**
-     *
+     * 该Map存储的是每个Broker的存活信息，Name Server每次收到心跳后会将此引用指向最新的表
      */
     private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
 
     /**
-     *
+     * 该Map存储的是Broker与Filter之间的关系表
      */
     private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
 
@@ -124,6 +129,18 @@ public class RouteInfoManager {
         return topicList.encode();
     }
 
+    /**
+     * 注册Broker
+     * @param clusterName 集群名称
+     * @param brokerAddr broker地址
+     * @param brokerName broker名称
+     * @param brokerId broker ID
+     * @param haServerAddr ha server地址
+     * @param topicConfigWrapper
+     * @param filterServerList
+     * @param channel
+     * @return
+     */
     public RegisterBrokerResult registerBroker(
             final String clusterName,
             final String brokerAddr,
