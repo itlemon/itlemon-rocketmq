@@ -17,15 +17,32 @@
 package org.apache.rocketmq.remoting.netty;
 
 import io.netty.channel.ChannelHandlerContext;
+
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 /**
  * Common remoting command processor
+ *
+ * @author itlemon
  */
 public interface NettyRequestProcessor {
-    RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
-        throws Exception;
 
+    /**
+     * 处理请求
+     *
+     * @param ctx Netty Channel处理器上下文对象
+     * @param request 请求体
+     * @return RemotingCommand对象
+     * @throws Exception 异常
+     */
+    RemotingCommand processRequest(ChannelHandlerContext ctx, RemotingCommand request)
+            throws Exception;
+
+    /**
+     * 拒绝请求
+     *
+     * @return 是否拒绝成功
+     */
     boolean rejectRequest();
 
 }

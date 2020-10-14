@@ -54,7 +54,7 @@ public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     /**
-     * Broker连接通道过期时间
+     * Broker连接通道过期时间：120s
      */
     private static final long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -131,15 +131,16 @@ public class RouteInfoManager {
 
     /**
      * 注册Broker
-     * @param clusterName 集群名称
+     *
+     * @param clusterName broker集群名称，来自broker.conf中配置的属性brokerClusterName的值
      * @param brokerAddr broker地址
-     * @param brokerName broker名称
-     * @param brokerId broker ID
+     * @param brokerName broker名称，来自broker.conf中配置的属性brokerName的值
+     * @param brokerId broker ID，来自broker.conf中配置的属性brokerId的值
      * @param haServerAddr ha server地址
-     * @param topicConfigWrapper
-     * @param filterServerList
-     * @param channel
-     * @return
+     * @param topicConfigWrapper topic配置包装类对象
+     * @param filterServerList filter server列表
+     * @param channel netty channel
+     * @return RegisterBrokerResult 注册Broker结果
      */
     public RegisterBrokerResult registerBroker(
             final String clusterName,

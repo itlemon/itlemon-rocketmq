@@ -18,16 +18,57 @@ package org.apache.rocketmq.common;
 
 import org.apache.rocketmq.common.constant.PermName;
 
+/**
+ * Topic配置
+ *
+ * @author itlemon
+ */
 public class TopicConfig {
+
+    /**
+     * 属性分隔符
+     */
     private static final String SEPARATOR = " ";
+
+    /**
+     * 默认的读Queue的数量
+     */
     public static int defaultReadQueueNums = 16;
+
+    /**
+     * 默认的写Queue的数量
+     */
     public static int defaultWriteQueueNums = 16;
+
+    /**
+     * topic名称
+     */
     private String topicName;
+
+    /**
+     * 读Queue的数量
+     */
     private int readQueueNums = defaultReadQueueNums;
+
+    /**
+     * 写Queue的数量
+     */
     private int writeQueueNums = defaultWriteQueueNums;
+
+    /**
+     * 默认权限为读和写
+     */
     private int perm = PermName.PERM_READ | PermName.PERM_WRITE;
+
+    /**
+     * Topic中的标签，消费者在订阅的时候可以订阅单标签，也可以订阅多标签，默认为单标签
+     */
     private TopicFilterType topicFilterType = TopicFilterType.SINGLE_TAG;
     private int topicSysFlag = 0;
+
+    /**
+     * topic中消息是否有序，默认为false
+     */
     private boolean order = false;
 
     public TopicConfig() {
@@ -136,25 +177,33 @@ public class TopicConfig {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
 
         final TopicConfig that = (TopicConfig) o;
 
-        if (readQueueNums != that.readQueueNums)
+        if (readQueueNums != that.readQueueNums) {
             return false;
-        if (writeQueueNums != that.writeQueueNums)
+        }
+        if (writeQueueNums != that.writeQueueNums) {
             return false;
-        if (perm != that.perm)
+        }
+        if (perm != that.perm) {
             return false;
-        if (topicSysFlag != that.topicSysFlag)
+        }
+        if (topicSysFlag != that.topicSysFlag) {
             return false;
-        if (order != that.order)
+        }
+        if (order != that.order) {
             return false;
-        if (topicName != null ? !topicName.equals(that.topicName) : that.topicName != null)
+        }
+        if (topicName != null ? !topicName.equals(that.topicName) : that.topicName != null) {
             return false;
+        }
         return topicFilterType == that.topicFilterType;
 
     }
@@ -174,8 +223,8 @@ public class TopicConfig {
     @Override
     public String toString() {
         return "TopicConfig [topicName=" + topicName + ", readQueueNums=" + readQueueNums
-            + ", writeQueueNums=" + writeQueueNums + ", perm=" + PermName.perm2String(perm)
-            + ", topicFilterType=" + topicFilterType + ", topicSysFlag=" + topicSysFlag + ", order="
-            + order + "]";
+                + ", writeQueueNums=" + writeQueueNums + ", perm=" + PermName.perm2String(perm)
+                + ", topicFilterType=" + topicFilterType + ", topicSysFlag=" + topicSysFlag + ", order="
+                + order + "]";
     }
 }
