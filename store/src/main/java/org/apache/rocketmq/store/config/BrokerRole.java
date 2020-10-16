@@ -16,8 +16,15 @@
  */
 package org.apache.rocketmq.store.config;
 
+/**
+ * @author itlemon
+ */
 public enum BrokerRole {
+
+    /**
+     * Broker角色
+     */
     ASYNC_MASTER,
     SYNC_MASTER,
-    SLAVE;
+    SLAVE
 }
