@@ -80,7 +80,7 @@ public class NamesrvController {
     private RemotingServer remotingServer;
 
     /**
-     *
+     * 与Broker之间的Channel的操作
      */
     private BrokerHousekeepingService brokerHousekeepingService;
 
@@ -90,12 +90,12 @@ public class NamesrvController {
     private ExecutorService remotingExecutor;
 
     /**
-     *
+     * 存储配置的容器
      */
     private Configuration configuration;
 
     /**
-     *
+     * 文件监控服务
      */
     private FileWatchService fileWatchService;
 
@@ -126,8 +126,12 @@ public class NamesrvController {
                 Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(),
                         new ThreadFactoryImpl("RemotingExecutorThread_"));
 
+        // 第四步：注册一个处理器，用于处理不同类型的请求
         this.registerProcessor();
 
+        // 第五步：注册两个定时任务线程池
+        // 1.NameServer定时每隔10秒钟扫描一次Broker列表，移除已经处于非激活状态的Broker；
+        // 2.NameServer定时每隔10分钟打印一次KV的配置信息
         this.scheduledExecutorService.scheduleAtFixedRate(
                 NamesrvController.this.routeInfoManager::scanNotActiveBroker, 5, 10, TimeUnit.SECONDS);
 
@@ -135,6 +139,7 @@ public class NamesrvController {
                 .scheduleAtFixedRate(NamesrvController.this.kvConfigManager::printAllPeriodically, 1, 10,
                         TimeUnit.MINUTES);
 
+        // 第六步：配置TSL协议，可选操作
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
             // Register a listener to reload SslContext
             try {
