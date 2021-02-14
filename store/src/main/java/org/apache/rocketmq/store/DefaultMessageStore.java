@@ -178,6 +178,7 @@ public class DefaultMessageStore implements MessageStore {
     /**
      * @throws IOException
      */
+    @Override
     public boolean load() {
         boolean result = true;
 
@@ -220,6 +221,7 @@ public class DefaultMessageStore implements MessageStore {
     /**
      * @throws Exception
      */
+    @Override
     public void start() throws Exception {
 
         lock = lockFile.getChannel().tryLock(0, 1, false);
@@ -292,6 +294,7 @@ public class DefaultMessageStore implements MessageStore {
         this.shutdown = false;
     }
 
+    @Override
     public void shutdown() {
         if (!this.shutdown) {
             this.shutdown = true;
@@ -728,6 +731,7 @@ public class DefaultMessageStore implements MessageStore {
         return 0;
     }
 
+    @Override
     public long getMinOffsetInQueue(String topic, int queueId) {
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
@@ -755,6 +759,7 @@ public class DefaultMessageStore implements MessageStore {
         return 0;
     }
 
+    @Override
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp) {
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
@@ -764,6 +769,7 @@ public class DefaultMessageStore implements MessageStore {
         return 0;
     }
 
+    @Override
     public MessageExt lookMessageByOffset(long commitLogOffset) {
         SelectMappedBufferResult sbr = this.commitLog.getMessage(commitLogOffset, 4);
         if (null != sbr) {
@@ -800,6 +806,7 @@ public class DefaultMessageStore implements MessageStore {
         return this.commitLog.getMessage(commitLogOffset, msgSize);
     }
 
+    @Override
     public String getRunningDataInfo() {
         return this.storeStatsService.toString();
     }
@@ -1044,6 +1051,7 @@ public class DefaultMessageStore implements MessageStore {
         return 0;
     }
 
+    @Override
     public void cleanExpiredConsumerQueue() {
         long minCommitLogOffset = this.commitLog.getMinOffset();
 
@@ -1844,6 +1852,7 @@ public class DefaultMessageStore implements MessageStore {
             }
         }
 
+        @Override
         public void run() {
             DefaultMessageStore.log.info(this.getServiceName() + " service started");
 

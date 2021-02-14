@@ -49,6 +49,7 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 
 /**
  * 路由信息管理器
+ * @author itlemon
  */
 public class RouteInfoManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
@@ -81,7 +82,7 @@ public class RouteInfoManager {
     private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
 
     /**
-     * 该Map存储的是Broker与Filter之间的关系表
+     * 该Map存储的是Broker与Filter Server之间的关系表
      */
     private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
 
@@ -156,11 +157,7 @@ public class RouteInfoManager {
             try {
                 this.lock.writeLock().lockInterruptibly();
 
-                Set<String> brokerNames = this.clusterAddrTable.get(clusterName);
-                if (null == brokerNames) {
-                    brokerNames = new HashSet<>();
-                    this.clusterAddrTable.put(clusterName, brokerNames);
-                }
+                Set<String> brokerNames = this.clusterAddrTable.computeIfAbsent(clusterName, k -> new HashSet<>());
                 brokerNames.add(brokerName);
 
                 boolean registerFirst = false;
@@ -822,7 +819,7 @@ class BrokerLiveInfo {
     private Channel channel;
 
     /**
-     * haServer的地址
+     * haServer的地址，是Slave从Master拉取数据时链接的地址
      */
     private String haServerAddr;
 

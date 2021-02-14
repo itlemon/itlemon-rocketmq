@@ -22,6 +22,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.BrokerConfig;
 import org.apache.rocketmq.common.MQVersion;
 import org.apache.rocketmq.common.MixAll;
@@ -116,7 +117,14 @@ public class BrokerStartup {
 
             nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
                 String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
-            nettyServerConfig.setListenPort(10911);
+            // 设置netty监听10911端口，这就是为什么broker的默认端口是10911，这里可以改成其他端口
+            // 其实还可以修改上述命令行参数代码，自定义一个参数，用来设置监听端口，在启动的时候指定该参数
+            String listenPort;
+            if (commandLine.hasOption('P') && (StringUtils.isNumeric(listenPort = commandLine.getOptionValue('P')))) {
+                nettyServerConfig.setListenPort(Integer.parseInt(listenPort));
+            } else {
+                nettyServerConfig.setListenPort(10911);
+            }
             final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
             if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {

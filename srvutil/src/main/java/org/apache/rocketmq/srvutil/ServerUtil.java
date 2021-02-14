@@ -46,7 +46,7 @@ public class ServerUtil {
         options.addOption(opt);
 
         // 测试自定义端口配置，非必需参数
-        opt = new Option("P", "listenPort", true, "Name server must be has listen port.");
+        opt = new Option("P", "listenPort", true, "server must be has listen port.");
         opt.setRequired(false);
         options.addOption(opt);
 
