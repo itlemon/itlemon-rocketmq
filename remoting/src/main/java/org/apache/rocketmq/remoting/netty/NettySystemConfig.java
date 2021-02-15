@@ -17,6 +17,9 @@
 
 package org.apache.rocketmq.remoting.netty;
 
+/**
+ * @author itlemon
+ */
 public class NettySystemConfig {
     public static final String COM_ROCKETMQ_REMOTING_NETTY_POOLED_BYTE_BUF_ALLOCATOR_ENABLE =
         "com.rocketmq.remoting.nettyPooledByteBufAllocatorEnable";

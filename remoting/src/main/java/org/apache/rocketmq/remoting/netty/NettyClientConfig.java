@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.remoting.netty;
 
+/**
+ * @author itlemon
+ */
 public class NettyClientConfig {
     /**
      * Worker thread number

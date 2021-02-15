@@ -146,22 +146,19 @@ public class BrokerOuterAPI {
             requestHeader.setBodyCrc32(bodyCrc32);
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
-                brokerOuterExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            RegisterBrokerResult result =
-                                    registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
-                            if (result != null) {
-                                registerBrokerResultList.add(result);
-                            }
-
-                            log.info("register broker[{}]to name server {} OK", brokerId, namesrvAddr);
-                        } catch (Exception e) {
-                            log.warn("registerBroker Exception, {}", namesrvAddr, e);
-                        } finally {
-                            countDownLatch.countDown();
+                brokerOuterExecutor.execute(() -> {
+                    try {
+                        RegisterBrokerResult result =
+                                registerBroker(namesrvAddr, oneway, timeoutMills, requestHeader, body);
+                        if (result != null) {
+                            registerBrokerResultList.add(result);
                         }
+
+                        log.info("register broker[{}]to name server {} OK", brokerId, namesrvAddr);
+                    } catch (Exception e) {
+                        log.warn("registerBroker Exception, {}", namesrvAddr, e);
+                    } finally {
+                        countDownLatch.countDown();
                     }
                 });
             }

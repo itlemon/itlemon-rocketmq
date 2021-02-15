@@ -350,71 +350,52 @@ public class BrokerController {
 
             final long initialDelay = UtilAll.computeNextMorningTimeMillis() - System.currentTimeMillis();
             final long period = 1000 * 60 * 60 * 24;
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.getBrokerStats().record();
-                    } catch (Throwable e) {
-                        log.error("schedule record error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.getBrokerStats().record();
+                } catch (Throwable e) {
+                    log.error("schedule record error.", e);
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.consumerOffsetManager.persist();
-                    } catch (Throwable e) {
-                        log.error("schedule persist consumerOffset error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.consumerOffsetManager.persist();
+                } catch (Throwable e) {
+                    log.error("schedule persist consumerOffset error.", e);
                 }
             }, 1000 * 10, this.brokerConfig.getFlushConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.consumerFilterManager.persist();
-                    } catch (Throwable e) {
-                        log.error("schedule persist consumer filter error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.consumerFilterManager.persist();
+                } catch (Throwable e) {
+                    log.error("schedule persist consumer filter error.", e);
                 }
             }, 1000 * 10, 1000 * 10, TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.protectBroker();
-                    } catch (Throwable e) {
-                        log.error("protectBroker error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.protectBroker();
+                } catch (Throwable e) {
+                    log.error("protectBroker error.", e);
                 }
             }, 3, 3, TimeUnit.MINUTES);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.printWaterMark();
-                    } catch (Throwable e) {
-                        log.error("printWaterMark error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.printWaterMark();
+                } catch (Throwable e) {
+                    log.error("printWaterMark error.", e);
                 }
             }, 10, 1, TimeUnit.SECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        log.info("dispatch behind commit log {} bytes",
-                                BrokerController.this.getMessageStore().dispatchBehindBytes());
-                    } catch (Throwable e) {
-                        log.error("schedule dispatchBehindBytes error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    log.info("dispatch behind commit log {} bytes",
+                            BrokerController.this.getMessageStore().dispatchBehindBytes());
+                } catch (Throwable e) {
+                    log.error("schedule dispatchBehindBytes error.", e);
                 }
             }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
 
@@ -422,15 +403,11 @@ public class BrokerController {
                 this.brokerOuterAPI.updateNameServerAddressList(this.brokerConfig.getNamesrvAddr());
                 log.info("Set user specified name server address: {}", this.brokerConfig.getNamesrvAddr());
             } else if (this.brokerConfig.isFetchNamesrvAddrByAddressServer()) {
-                this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            BrokerController.this.brokerOuterAPI.fetchNameServerAddr();
-                        } catch (Throwable e) {
-                            log.error("ScheduledTask fetchNameServerAddr exception", e);
-                        }
+                this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                    try {
+                        BrokerController.this.brokerOuterAPI.fetchNameServerAddr();
+                    } catch (Throwable e) {
+                        log.error("ScheduledTask fetchNameServerAddr exception", e);
                     }
                 }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
             }
@@ -445,14 +422,11 @@ public class BrokerController {
                         this.updateMasterHAServerAddrPeriodically = true;
                     }
                 } else {
-                    this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                BrokerController.this.printMasterAndSlaveDiff();
-                            } catch (Throwable e) {
-                                log.error("schedule printMasterAndSlaveDiff error.", e);
-                            }
+                    this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                        try {
+                            BrokerController.this.printMasterAndSlaveDiff();
+                        } catch (Throwable e) {
+                            log.error("schedule printMasterAndSlaveDiff error.", e);
                         }
                     }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
                 }
@@ -681,10 +655,8 @@ public class BrokerController {
 
     public void protectBroker() {
         if (this.brokerConfig.isDisableConsumeIfConsumerReadSlowly()) {
-            final Iterator<Map.Entry<String, MomentStatsItem>> it =
-                    this.brokerStatsManager.getMomentStatsItemSetFallSize().getStatsItemTable().entrySet().iterator();
-            while (it.hasNext()) {
-                final Map.Entry<String, MomentStatsItem> next = it.next();
+            for (Map.Entry<String, MomentStatsItem> next : this.brokerStatsManager.getMomentStatsItemSetFallSize()
+                    .getStatsItemTable().entrySet()) {
                 final long fallBehindBytes = next.getValue().getValue().get();
                 if (fallBehindBytes > this.brokerConfig.getConsumerFallbehindThreshold()) {
                     final String[] split = next.getValue().getStatsKey().split("@");
@@ -940,18 +912,14 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                                                              @Override
-                                                              public void run() {
-                                                                  try {
-                                                                      BrokerController.this.registerBrokerAll(true,
-                                                                              false, brokerConfig.isForceRegister());
-                                                                  } catch (Throwable e) {
-                                                                      log.error("registerBrokerAll Exception", e);
-                                                                  }
-                                                              }
-                                                          }, 1000 * 10, Math.max(10000,
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                    try {
+                        BrokerController.this.registerBrokerAll(true,
+                                false, brokerConfig.isForceRegister());
+                    } catch (Throwable e) {
+                        log.error("registerBrokerAll Exception", e);
+                    }
+                }, 1000 * 10, Math.max(10000,
                 Math.min(brokerConfig.getRegisterNameServerPeriod(), 60000)),
                 TimeUnit.MILLISECONDS);
 
@@ -1025,7 +993,7 @@ public class BrokerController {
                 this.brokerConfig.getRegisterBrokerTimeoutMills(),
                 this.brokerConfig.isCompressedRegister());
 
-        if (registerBrokerResultList.size() > 0) {
+        if (!registerBrokerResultList.isEmpty()) {
             RegisterBrokerResult registerBrokerResult = registerBrokerResultList.get(0);
             if (registerBrokerResult != null) {
                 if (this.updateMasterHAServerAddrPeriodically && registerBrokerResult.getHaServerAddr() != null) {
@@ -1053,7 +1021,7 @@ public class BrokerController {
                 .needRegister(clusterName, brokerAddr, brokerName, brokerId, topicConfigWrapper, timeoutMills);
         boolean needRegister = false;
         for (Boolean changed : changeList) {
-            if (changed) {
+            if (Boolean.TRUE.equals(changed)) {
                 needRegister = true;
                 break;
             }
@@ -1198,14 +1166,11 @@ public class BrokerController {
                 slaveSyncFuture.cancel(false);
             }
             this.slaveSynchronize.setMasterAddr(null);
-            slaveSyncFuture = this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.slaveSynchronize.syncAll();
-                    } catch (Throwable e) {
-                        log.error("ScheduledTask SlaveSynchronize syncAll error.", e);
-                    }
+            slaveSyncFuture = this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.slaveSynchronize.syncAll();
+                } catch (Throwable e) {
+                    log.error("ScheduledTask SlaveSynchronize syncAll error.", e);
                 }
             }, 1000 * 3, 1000 * 10, TimeUnit.MILLISECONDS);
         } else {
