@@ -80,10 +80,13 @@ import org.apache.rocketmq.tools.command.topic.UpdateTopicPermSubCommand;
 import org.apache.rocketmq.tools.command.topic.UpdateTopicSubCommand;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @author itlemon
+ */
 public class MQAdminStartup {
-    protected static List<SubCommand> subCommandList = new ArrayList<SubCommand>();
+    protected static List<SubCommand> subCommandList = new ArrayList<>();
 
-    private static String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
+    private static final String ROCKETMQ_HOME = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
         System.getenv(MixAll.ROCKETMQ_HOME_ENV));
 
     public static void main(String[] args) {
@@ -92,8 +95,6 @@ public class MQAdminStartup {
 
     public static void main0(String[] args, RPCHook rpcHook) {
         System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-
-        //PackageConflictDetect.detectFastjson();
 
         initCommand();
 
@@ -136,7 +137,7 @@ public class MQAdminStartup {
                             System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, namesrvAddr);
                         }
 
-                        cmd.execute(commandLine, options, AclUtils.getAclRPCHook(rocketmqHome + MixAll.ACL_CONF_TOOLS_FILE));
+                        cmd.execute(commandLine, options, AclUtils.getAclRPCHook(ROCKETMQ_HOME + MixAll.ACL_CONF_TOOLS_FILE));
                     } else {
                         System.out.printf("The sub command %s not exist.%n", args[0]);
                     }
@@ -218,7 +219,7 @@ public class MQAdminStartup {
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
         lc.reset();
-        configurator.doConfigure(rocketmqHome + "/conf/logback_tools.xml");
+        configurator.doConfigure(ROCKETMQ_HOME + "/conf/logback_tools.xml");
     }
 
     private static void printHelp() {
@@ -232,7 +233,7 @@ public class MQAdminStartup {
 
     private static SubCommand findSubCommand(final String name) {
         for (SubCommand cmd : subCommandList) {
-            if (cmd.commandName().toUpperCase().equals(name.toUpperCase())) {
+            if (cmd.commandName().equalsIgnoreCase(name)) {
                 return cmd;
             }
         }
@@ -243,9 +244,7 @@ public class MQAdminStartup {
     private static String[] parseSubArgs(String[] args) {
         if (args.length > 1) {
             String[] result = new String[args.length - 1];
-            for (int i = 0; i < args.length - 1; i++) {
-                result[i] = args[i + 1];
-            }
+            System.arraycopy(args, 1, result, 0, args.length - 1);
             return result;
         }
         return null;

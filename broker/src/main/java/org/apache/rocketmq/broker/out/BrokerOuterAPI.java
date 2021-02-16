@@ -60,6 +60,9 @@ import org.apache.rocketmq.remoting.netty.NettyClientConfig;
 import org.apache.rocketmq.remoting.netty.NettyRemotingClient;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+/**
+ * @author itlemon
+ */
 public class BrokerOuterAPI {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final RemotingClient remotingClient;
@@ -126,11 +129,14 @@ public class BrokerOuterAPI {
             final int timeoutMills,
             final boolean compressed) {
 
+        // 封装注册结果的容器
         final List<RegisterBrokerResult> registerBrokerResultList = Lists.newArrayList();
+        // 获取NameServer列表
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
-
+        if (nameServerAddressList != null && !nameServerAddressList.isEmpty()) {
+            // 构建注册Broker的请求头对象
             final RegisterBrokerRequestHeader requestHeader = new RegisterBrokerRequestHeader();
+            // 将Broker的主要元信息存储到请求头中
             requestHeader.setBrokerAddr(brokerAddr);
             requestHeader.setBrokerId(brokerId);
             requestHeader.setBrokerName(brokerName);
@@ -138,13 +144,17 @@ public class BrokerOuterAPI {
             requestHeader.setHaServerAddr(haServerAddr);
             requestHeader.setCompressed(compressed);
 
+            // 构建请求体
             RegisterBrokerBody requestBody = new RegisterBrokerBody();
+            // 将topic配置信息及过滤器服务信息数据封装到请求体中
             requestBody.setTopicConfigSerializeWrapper(topicConfigWrapper);
             requestBody.setFilterServerList(filterServerList);
+            // 将请求体进行编码（是否进行gzip压缩，默认为false）
             final byte[] body = requestBody.encode(compressed);
             final int bodyCrc32 = UtilAll.crc32(body);
             requestHeader.setBodyCrc32(bodyCrc32);
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
+            // 遍历所有的NameServer地址，分别向每一个NameServer进行注册
             for (final String namesrvAddr : nameServerAddressList) {
                 brokerOuterExecutor.execute(() -> {
                     try {
@@ -181,9 +191,11 @@ public class BrokerOuterAPI {
     ) throws RemotingCommandException, MQBrokerException, RemotingConnectException, RemotingSendRequestException,
             RemotingTimeoutException,
             InterruptedException {
+        // 根据请求码RequestCode.REGISTER_BROKER获取注册Broker信息的远程连接
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.REGISTER_BROKER, requestHeader);
         request.setBody(body);
 
+        // 如果是单向消息，也就是不管注册结果如何，那么就调用不同的方法来进行注册
         if (oneway) {
             try {
                 this.remotingClient.invokeOneway(namesrvAddr, request, timeoutMills);
@@ -193,10 +205,12 @@ public class BrokerOuterAPI {
             return null;
         }
 
+        // 同步注册，也就是阻塞等待注册结果
         RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
         assert response != null;
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
+                // 解析注册结果
                 RegisterBrokerResponseHeader responseHeader =
                         (RegisterBrokerResponseHeader) response
                                 .decodeCommandCustomHeader(RegisterBrokerResponseHeader.class);
@@ -271,53 +285,50 @@ public class BrokerOuterAPI {
             final int timeoutMills) {
         final List<Boolean> changedList = new CopyOnWriteArrayList<>();
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
+        if (nameServerAddressList != null && !nameServerAddressList.isEmpty()) {
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
-                brokerOuterExecutor.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            QueryDataVersionRequestHeader requestHeader = new QueryDataVersionRequestHeader();
-                            requestHeader.setBrokerAddr(brokerAddr);
-                            requestHeader.setBrokerId(brokerId);
-                            requestHeader.setBrokerName(brokerName);
-                            requestHeader.setClusterName(clusterName);
-                            RemotingCommand request =
-                                    RemotingCommand.createRequestCommand(RequestCode.QUERY_DATA_VERSION, requestHeader);
-                            request.setBody(topicConfigWrapper.getDataVersion().encode());
-                            RemotingCommand response = remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
-                            DataVersion nameServerDataVersion = null;
-                            Boolean changed = false;
-                            switch (response.getCode()) {
-                                case ResponseCode.SUCCESS: {
-                                    QueryDataVersionResponseHeader queryDataVersionResponseHeader =
-                                            (QueryDataVersionResponseHeader) response
-                                                    .decodeCommandCustomHeader(QueryDataVersionResponseHeader.class);
-                                    changed = queryDataVersionResponseHeader.getChanged();
-                                    byte[] body = response.getBody();
-                                    if (body != null) {
-                                        nameServerDataVersion = DataVersion.decode(body, DataVersion.class);
-                                        if (!topicConfigWrapper.getDataVersion().equals(nameServerDataVersion)) {
-                                            changed = true;
-                                        }
-                                    }
-                                    if (changed == null || changed) {
-                                        changedList.add(Boolean.TRUE);
+                brokerOuterExecutor.execute(() -> {
+                    try {
+                        QueryDataVersionRequestHeader requestHeader = new QueryDataVersionRequestHeader();
+                        requestHeader.setBrokerAddr(brokerAddr);
+                        requestHeader.setBrokerId(brokerId);
+                        requestHeader.setBrokerName(brokerName);
+                        requestHeader.setClusterName(clusterName);
+                        RemotingCommand request =
+                                RemotingCommand.createRequestCommand(RequestCode.QUERY_DATA_VERSION, requestHeader);
+                        request.setBody(topicConfigWrapper.getDataVersion().encode());
+                        RemotingCommand response = remotingClient.invokeSync(namesrvAddr, request, timeoutMills);
+                        DataVersion nameServerDataVersion = null;
+                        Boolean changed = false;
+                        switch (response.getCode()) {
+                            case ResponseCode.SUCCESS: {
+                                QueryDataVersionResponseHeader queryDataVersionResponseHeader =
+                                        (QueryDataVersionResponseHeader) response
+                                                .decodeCommandCustomHeader(QueryDataVersionResponseHeader.class);
+                                changed = queryDataVersionResponseHeader.getChanged();
+                                byte[] body = response.getBody();
+                                if (body != null) {
+                                    nameServerDataVersion = DataVersion.decode(body, DataVersion.class);
+                                    if (!topicConfigWrapper.getDataVersion().equals(nameServerDataVersion)) {
+                                        changed = true;
                                     }
                                 }
-                                default:
-                                    break;
+                                if (changed == null || changed) {
+                                    changedList.add(Boolean.TRUE);
+                                }
                             }
-                            log.warn("Query data version from name server {} OK,changed {}, broker {},name server {}",
-                                    namesrvAddr, changed, topicConfigWrapper.getDataVersion(),
-                                    nameServerDataVersion == null ? "" : nameServerDataVersion);
-                        } catch (Exception e) {
-                            changedList.add(Boolean.TRUE);
-                            log.error("Query data version from name server {}  Exception, {}", namesrvAddr, e);
-                        } finally {
-                            countDownLatch.countDown();
+                            default:
+                                break;
                         }
+                        log.warn("Query data version from name server {} OK,changed {}, broker {},name server {}",
+                                namesrvAddr, changed, topicConfigWrapper.getDataVersion(),
+                                nameServerDataVersion == null ? "" : nameServerDataVersion);
+                    } catch (Exception e) {
+                        changedList.add(Boolean.TRUE);
+                        log.error("Query data version from name server {}  Exception, {}", namesrvAddr, e);
+                    } finally {
+                        countDownLatch.countDown();
                     }
                 });
 

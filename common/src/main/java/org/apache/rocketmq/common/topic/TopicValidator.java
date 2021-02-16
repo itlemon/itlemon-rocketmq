@@ -43,12 +43,12 @@ public class TopicValidator {
     private static final Pattern PATTERN = Pattern.compile(VALID_PATTERN_STR);
     private static final int TOPIC_MAX_LENGTH = 127;
 
-    private static final Set<String> SYSTEM_TOPIC_SET = new HashSet<String>();
+    private static final Set<String> SYSTEM_TOPIC_SET = new HashSet<>();
 
     /**
      * Topics'set which client can not send msg!
      */
-    private static final Set<String> NOT_ALLOWED_SEND_TOPIC_SET = new HashSet<String>();
+    private static final Set<String> NOT_ALLOWED_SEND_TOPIC_SET = new HashSet<>();
 
     static {
         SYSTEM_TOPIC_SET.add(AUTO_CREATE_TOPIC_KEY_TOPIC);

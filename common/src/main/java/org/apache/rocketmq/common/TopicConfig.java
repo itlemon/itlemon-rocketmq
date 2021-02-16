@@ -33,12 +33,12 @@ public class TopicConfig {
     /**
      * 默认的读Queue的数量
      */
-    public static int defaultReadQueueNums = 16;
+    public static final int DEFAULT_READ_QUEUE_NUMS = 16;
 
     /**
      * 默认的写Queue的数量
      */
-    public static int defaultWriteQueueNums = 16;
+    public static final int DEFAULT_WRITE_QUEUE_NUMS = 16;
 
     /**
      * topic名称
@@ -48,12 +48,12 @@ public class TopicConfig {
     /**
      * 读Queue的数量
      */
-    private int readQueueNums = defaultReadQueueNums;
+    private int readQueueNums = DEFAULT_READ_QUEUE_NUMS;
 
     /**
      * 写Queue的数量
      */
-    private int writeQueueNums = defaultWriteQueueNums;
+    private int writeQueueNums = DEFAULT_WRITE_QUEUE_NUMS;
 
     /**
      * 默认权限为读和写

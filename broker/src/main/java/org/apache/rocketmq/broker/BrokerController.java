@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -912,6 +911,7 @@ public class BrokerController {
             this.registerBrokerAll(true, false, true);
         }
 
+        // 注册一个定时任务，默认每隔30s向NameServer发送元数据信息
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
                     try {
                         BrokerController.this.registerBrokerAll(true,
@@ -953,10 +953,19 @@ public class BrokerController {
         doRegisterBrokerAll(true, false, topicConfigSerializeWrapper);
     }
 
+    /**
+     * 注册Broker元信息到NameServer列表中
+     *
+     * @param checkOrderConfig 是否检查顺序消息配置
+     * @param oneway 是否是单向消息，如果是，那么就不需要知道注册结果，不同于同步和异步消息
+     * @param forceRegister 是否是强制注册
+     */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
+        // 将Topic配置进行包装
         TopicConfigSerializeWrapper topicConfigWrapper =
                 this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
 
+        // 如果Broker只有读权限或者写权限，那么需要将Topic的权限设置为和Broker相同
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
                 || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
             ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<>();
@@ -970,17 +979,22 @@ public class BrokerController {
             topicConfigWrapper.setTopicConfigTable(topicConfigTable);
         }
 
+        // 判断是否需要注册，如果不满足强制注册，那么就需要调用needRegister来判断是否需要注册
+        // needRegister内部逻辑也很简单，就是去请求NameServer，判断NameServer存储的Broker信息
+        // 是否和当前的Broker版本信息是否一致，如果是一致的，那么就不需要注册
         if (forceRegister || needRegister(this.brokerConfig.getBrokerClusterName(),
                 this.getBrokerAddr(),
                 this.brokerConfig.getBrokerName(),
                 this.brokerConfig.getBrokerId(),
                 this.brokerConfig.getRegisterBrokerTimeoutMills())) {
+            // Broker向NameServer注册的主要方法
             doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
         }
     }
 
     private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway,
             TopicConfigSerializeWrapper topicConfigWrapper) {
+        // 调用brokerOuterAPI的registerBrokerAll接口来向NameServer进行注册
         List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
                 this.brokerConfig.getBrokerClusterName(),
                 this.getBrokerAddr(),
