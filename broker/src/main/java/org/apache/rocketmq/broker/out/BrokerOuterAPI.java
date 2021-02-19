@@ -229,14 +229,24 @@ public class BrokerOuterAPI {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+    /**
+     * 注销NameServer中的路由信息
+     *
+     * @param clusterName 集群名称
+     * @param brokerAddr broker地址
+     * @param brokerName broker名称
+     * @param brokerId broker ID
+     */
     public void unregisterBrokerAll(
             final String clusterName,
             final String brokerAddr,
             final String brokerName,
             final long brokerId
     ) {
+        // 获取所有的NameServer列表
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
         if (nameServerAddressList != null) {
+            // 遍历NameServer列表并分别注销
             for (String namesrvAddr : nameServerAddressList) {
                 try {
                     this.unregisterBroker(namesrvAddr, clusterName, brokerAddr, brokerName, brokerId);
@@ -256,15 +266,19 @@ public class BrokerOuterAPI {
             final long brokerId
     ) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException, InterruptedException,
             MQBrokerException {
+        // 第一步：封装注销Broker的请求头
         UnRegisterBrokerRequestHeader requestHeader = new UnRegisterBrokerRequestHeader();
         requestHeader.setBrokerAddr(brokerAddr);
         requestHeader.setBrokerId(brokerId);
         requestHeader.setBrokerName(brokerName);
         requestHeader.setClusterName(clusterName);
+        // 第二步：根据请求码来获取连接
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UNREGISTER_BROKER, requestHeader);
 
+        // 第三步：执行连接请求
         RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, 3000);
         assert response != null;
+        // 第四步：分析结果
         switch (response.getCode()) {
             case ResponseCode.SUCCESS: {
                 return;

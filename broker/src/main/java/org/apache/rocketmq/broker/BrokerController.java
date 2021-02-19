@@ -961,7 +961,7 @@ public class BrokerController {
      * @param forceRegister 是否是强制注册
      */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
-        // 将Topic配置进行包装
+        // 将Topic配置进行包装，其实就是一些默认的topic信息
         TopicConfigSerializeWrapper topicConfigWrapper =
                 this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
 

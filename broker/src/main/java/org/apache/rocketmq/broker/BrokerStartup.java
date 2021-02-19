@@ -235,6 +235,8 @@ public class BrokerStartup {
                 System.exit(-3);
             }
 
+            // Broker在启动的时候会注册一个钩子函数，当Broker的进程收到退出进程的信号后会指定该函数
+            // 主要是执行controller.shutdown();来关闭资源链接已经清理NameServer中的路由信息等
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 private volatile boolean hasShutdown = false;
                 private final AtomicInteger shutdownTimes = new AtomicInteger(0);
