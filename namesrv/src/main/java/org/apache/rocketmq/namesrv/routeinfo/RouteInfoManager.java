@@ -527,10 +527,7 @@ public class RouteInfoManager {
             try {
                 try {
                     this.lock.readLock().lockInterruptibly();
-                    Iterator<Entry<String, BrokerLiveInfo>> itBrokerLiveTable =
-                            this.brokerLiveTable.entrySet().iterator();
-                    while (itBrokerLiveTable.hasNext()) {
-                        Entry<String, BrokerLiveInfo> entry = itBrokerLiveTable.next();
+                    for (Entry<String, BrokerLiveInfo> entry : this.brokerLiveTable.entrySet()) {
                         if (entry.getValue().getChannel() == channel) {
                             brokerAddrFound = entry.getKey();
                             break;
