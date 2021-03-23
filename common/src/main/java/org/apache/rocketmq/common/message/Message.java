@@ -36,7 +36,7 @@ public class Message implements Serializable {
     private String topic;
 
     /**
-     * 未知用途
+     * 消息标志，RocketMQ预留给用户使用，RocketMQ自身不做处理
      */
     private int flag;
 
