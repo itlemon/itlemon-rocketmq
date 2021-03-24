@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class LatencyFaultToleranceImplTest {
     private LatencyFaultTolerance<String> latencyFaultTolerance;
-    private String brokerName = "BrokerA";
-    private String anotherBrokerName = "BrokerB";
+    private final String brokerName = "BrokerA";
+    private final String anotherBrokerName = "BrokerB";
 
     @Before
     public void init() {

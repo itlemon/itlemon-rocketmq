@@ -18,6 +18,7 @@ package org.apache.rocketmq.client.producer;
 
 import java.util.Collection;
 import java.util.List;
+
 import org.apache.rocketmq.client.MQAdmin;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
@@ -26,6 +27,9 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 
+/**
+ * @author itlemon
+ */
 public interface MQProducer extends MQAdmin {
     void start() throws MQClientException;
 
@@ -34,91 +38,101 @@ public interface MQProducer extends MQAdmin {
     List<MessageQueue> fetchPublishMessageQueues(final String topic) throws MQClientException;
 
     SendResult send(final Message msg) throws MQClientException, RemotingException, MQBrokerException,
-        InterruptedException;
+            InterruptedException;
 
     SendResult send(final Message msg, final long timeout) throws MQClientException,
-        RemotingException, MQBrokerException, InterruptedException;
+            RemotingException, MQBrokerException, InterruptedException;
 
     void send(final Message msg, final SendCallback sendCallback) throws MQClientException,
-        RemotingException, InterruptedException;
+            RemotingException, InterruptedException;
 
     void send(final Message msg, final SendCallback sendCallback, final long timeout)
-        throws MQClientException, RemotingException, InterruptedException;
+            throws MQClientException, RemotingException, InterruptedException;
 
     void sendOneway(final Message msg) throws MQClientException, RemotingException,
-        InterruptedException;
+            InterruptedException;
 
     SendResult send(final Message msg, final MessageQueue mq) throws MQClientException,
-        RemotingException, MQBrokerException, InterruptedException;
+            RemotingException, MQBrokerException, InterruptedException;
 
     SendResult send(final Message msg, final MessageQueue mq, final long timeout)
-        throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 
     void send(final Message msg, final MessageQueue mq, final SendCallback sendCallback)
-        throws MQClientException, RemotingException, InterruptedException;
+            throws MQClientException, RemotingException, InterruptedException;
 
     void send(final Message msg, final MessageQueue mq, final SendCallback sendCallback, long timeout)
-        throws MQClientException, RemotingException, InterruptedException;
+            throws MQClientException, RemotingException, InterruptedException;
 
     void sendOneway(final Message msg, final MessageQueue mq) throws MQClientException,
-        RemotingException, InterruptedException;
+            RemotingException, InterruptedException;
 
     SendResult send(final Message msg, final MessageQueueSelector selector, final Object arg)
-        throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 
     SendResult send(final Message msg, final MessageQueueSelector selector, final Object arg,
-        final long timeout) throws MQClientException, RemotingException, MQBrokerException,
-        InterruptedException;
+            final long timeout) throws MQClientException, RemotingException, MQBrokerException,
+            InterruptedException;
 
     void send(final Message msg, final MessageQueueSelector selector, final Object arg,
-        final SendCallback sendCallback) throws MQClientException, RemotingException,
-        InterruptedException;
+            final SendCallback sendCallback) throws MQClientException, RemotingException,
+            InterruptedException;
 
     void send(final Message msg, final MessageQueueSelector selector, final Object arg,
-        final SendCallback sendCallback, final long timeout) throws MQClientException, RemotingException,
-        InterruptedException;
+            final SendCallback sendCallback, final long timeout) throws MQClientException, RemotingException,
+            InterruptedException;
 
     void sendOneway(final Message msg, final MessageQueueSelector selector, final Object arg)
-        throws MQClientException, RemotingException, InterruptedException;
+            throws MQClientException, RemotingException, InterruptedException;
 
     TransactionSendResult sendMessageInTransaction(final Message msg,
-        final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException;
+            final LocalTransactionExecuter tranExecuter, final Object arg) throws MQClientException;
 
     TransactionSendResult sendMessageInTransaction(final Message msg,
-        final Object arg) throws MQClientException;
+            final Object arg) throws MQClientException;
 
-    //for batch
+    /**
+     * for batch
+     *
+     * @param msgs message
+     * @return send result
+     * @throws MQClientException MQ客户端异常
+     * @throws RemotingException 远程调用异常
+     * @throws MQBrokerException MQ Broker异常
+     * @throws InterruptedException 线程异常
+     */
     SendResult send(final Collection<Message> msgs) throws MQClientException, RemotingException, MQBrokerException,
-        InterruptedException;
+            InterruptedException;
 
     SendResult send(final Collection<Message> msgs, final long timeout) throws MQClientException,
-        RemotingException, MQBrokerException, InterruptedException;
+            RemotingException, MQBrokerException, InterruptedException;
 
     SendResult send(final Collection<Message> msgs, final MessageQueue mq) throws MQClientException,
-        RemotingException, MQBrokerException, InterruptedException;
+            RemotingException, MQBrokerException, InterruptedException;
 
     SendResult send(final Collection<Message> msgs, final MessageQueue mq, final long timeout)
-        throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 
     //for rpc
     Message request(final Message msg, final long timeout) throws RequestTimeoutException, MQClientException,
-        RemotingException, MQBrokerException, InterruptedException;
+            RemotingException, MQBrokerException, InterruptedException;
 
     void request(final Message msg, final RequestCallback requestCallback, final long timeout)
-        throws MQClientException, RemotingException, InterruptedException, MQBrokerException;
+            throws MQClientException, RemotingException, InterruptedException, MQBrokerException;
 
     Message request(final Message msg, final MessageQueueSelector selector, final Object arg,
-        final long timeout) throws RequestTimeoutException, MQClientException, RemotingException, MQBrokerException,
-        InterruptedException;
+            final long timeout) throws RequestTimeoutException, MQClientException, RemotingException, MQBrokerException,
+            InterruptedException;
 
     void request(final Message msg, final MessageQueueSelector selector, final Object arg,
-        final RequestCallback requestCallback,
-        final long timeout) throws MQClientException, RemotingException,
-        InterruptedException, MQBrokerException;
+            final RequestCallback requestCallback,
+            final long timeout) throws MQClientException, RemotingException,
+            InterruptedException, MQBrokerException;
 
     Message request(final Message msg, final MessageQueue mq, final long timeout)
-        throws RequestTimeoutException, MQClientException, RemotingException, MQBrokerException, InterruptedException;
+            throws RequestTimeoutException, MQClientException, RemotingException, MQBrokerException,
+            InterruptedException;
 
     void request(final Message msg, final MessageQueue mq, final RequestCallback requestCallback, long timeout)
-        throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
+            throws MQClientException, RemotingException, MQBrokerException, InterruptedException;
 }

@@ -21,11 +21,26 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 /**
  * RPC 钩子函数
+ *
  * @author itlemon
  */
 public interface RPCHook {
+
+    /**
+     * 在请求之前做的动作
+     *
+     * @param remoteAddr 远程地址
+     * @param request 请求
+     */
     void doBeforeRequest(final String remoteAddr, final RemotingCommand request);
 
+    /**
+     * 在响应后做的动作
+     *
+     * @param remoteAddr 远程地址
+     * @param request 请求
+     * @param response 响应
+     */
     void doAfterResponse(final String remoteAddr, final RemotingCommand request,
-        final RemotingCommand response);
+            final RemotingCommand response);
 }

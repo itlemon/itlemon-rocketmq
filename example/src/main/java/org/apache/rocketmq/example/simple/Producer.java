@@ -28,7 +28,7 @@ public class Producer {
         DefaultMQProducer producer = new DefaultMQProducer("ProducerGroupName");
         producer.start();
 
-        for (int i = 0; i < 128; i++)
+        for (int i = 0; i < 128; i++) {
             try {
                 {
                     Message msg = new Message("TopicTest",
@@ -42,6 +42,7 @@ public class Producer {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
 
         producer.shutdown();
     }

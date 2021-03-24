@@ -24,6 +24,8 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 
 /**
  * Base interface for MQ management
+ *
+ * @author itlemon
  */
 public interface MQAdmin {
     /**
@@ -32,9 +34,10 @@ public interface MQAdmin {
      * @param key accesskey
      * @param newTopic topic name
      * @param queueNum topic's queue number
+     * @throws MQClientException MQ客户端异常
      */
     void createTopic(final String key, final String newTopic, final int queueNum)
-        throws MQClientException;
+            throws MQClientException;
 
     /**
      * Creates an topic
@@ -43,9 +46,10 @@ public interface MQAdmin {
      * @param newTopic topic name
      * @param queueNum topic's queue number
      * @param topicSysFlag topic system flag
+     * @throws MQClientException MQ客户端异常
      */
     void createTopic(String key, String newTopic, int queueNum, int topicSysFlag)
-        throws MQClientException;
+            throws MQClientException;
 
     /**
      * Gets the message queue offset according to some time in milliseconds<br>
@@ -54,6 +58,7 @@ public interface MQAdmin {
      * @param mq Instance of MessageQueue
      * @param timestamp from when in milliseconds.
      * @return offset
+     * @throws MQClientException MQ客户端异常
      */
     long searchOffset(final MessageQueue mq, final long timestamp) throws MQClientException;
 
@@ -62,6 +67,7 @@ public interface MQAdmin {
      *
      * @param mq Instance of MessageQueue
      * @return the max offset
+     * @throws MQClientException MQ客户端异常
      */
     long maxOffset(final MessageQueue mq) throws MQClientException;
 
@@ -70,6 +76,7 @@ public interface MQAdmin {
      *
      * @param mq Instance of MessageQueue
      * @return the minimum offset
+     * @throws MQClientException MQ客户端异常
      */
     long minOffset(final MessageQueue mq) throws MQClientException;
 
@@ -78,6 +85,7 @@ public interface MQAdmin {
      *
      * @param mq Instance of MessageQueue
      * @return the time in microseconds
+     * @throws MQClientException MQ客户端异常
      */
     long earliestMsgStoreTime(final MessageQueue mq) throws MQClientException;
 
@@ -86,9 +94,13 @@ public interface MQAdmin {
      *
      * @param offsetMsgId message id
      * @return message
+     * @throws RemotingException 远程调用异常
+     * @throws MQClientException MQ客户端异常
+     * @throws MQBrokerException MQ Broker异常
+     * @throws InterruptedException 线程异常
      */
     MessageExt viewMessage(final String offsetMsgId) throws RemotingException, MQBrokerException,
-        InterruptedException, MQClientException;
+            InterruptedException, MQClientException;
 
     /**
      * Query messages
@@ -99,14 +111,24 @@ public interface MQAdmin {
      * @param begin from when
      * @param end to when
      * @return Instance of QueryResult
+     * @throws MQClientException MQ客户端异常
+     * @throws InterruptedException 线程异常
      */
     QueryResult queryMessage(final String topic, final String key, final int maxNum, final long begin,
-        final long end) throws MQClientException, InterruptedException;
+            final long end) throws MQClientException, InterruptedException;
 
     /**
+     * Query message according to message topic and message id
+     *
+     * @param topic message topic
+     * @param msgId message id
      * @return The {@code MessageExt} of given msgId
+     * @throws RemotingException 远程调用异常
+     * @throws MQClientException MQ客户端异常
+     * @throws MQBrokerException MQ Broker异常
+     * @throws InterruptedException 线程异常
      */
     MessageExt viewMessage(String topic,
-        String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException;
+            String msgId) throws RemotingException, MQBrokerException, InterruptedException, MQClientException;
 
 }
