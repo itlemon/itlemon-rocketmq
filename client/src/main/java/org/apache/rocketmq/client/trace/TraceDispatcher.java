@@ -18,16 +18,20 @@ package org.apache.rocketmq.client.trace;
 
 import org.apache.rocketmq.client.AccessChannel;
 import org.apache.rocketmq.client.exception.MQClientException;
+
 import java.io.IOException;
 
 /**
  * Interface of asynchronous transfer data
+ *
+ * @author itlemon
  */
 public interface TraceDispatcher {
     enum Type {
         PRODUCE,
         CONSUME
     }
+
     /**
      * Initialize asynchronous transfer data module
      */
@@ -35,15 +39,13 @@ public interface TraceDispatcher {
 
     /**
      * Append the transfering data
+     *
      * @param ctx data infomation
-     * @return
      */
     boolean append(Object ctx);
 
     /**
      * Write flush action
-     *
-     * @throws IOException
      */
     void flush() throws IOException;
 
