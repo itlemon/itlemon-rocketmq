@@ -16,6 +16,9 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.MixAll;
 
+/**
+ * @author itlemon
+ */
 public class NameServerAddressUtils {
     public static final String INSTANCE_PREFIX = "MQ_INST_";
     public static final String INSTANCE_REGEX = INSTANCE_PREFIX + "\\w+_\\w+";

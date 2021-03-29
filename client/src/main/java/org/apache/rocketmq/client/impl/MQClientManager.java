@@ -19,44 +19,57 @@ package org.apache.rocketmq.client.impl;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.rocketmq.client.ClientConfig;
 import org.apache.rocketmq.client.impl.factory.MQClientInstance;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.RPCHook;
 
+/**
+ * @author itlemon
+ */
 public class MQClientManager {
-    private final static InternalLogger log = ClientLogger.getLog();
-    private static MQClientManager instance = new MQClientManager();
-    private AtomicInteger factoryIndexGenerator = new AtomicInteger();
-    private ConcurrentMap<String/* clientId */, MQClientInstance> factoryTable =
-        new ConcurrentHashMap<String, MQClientInstance>();
+    private static final InternalLogger LOG = ClientLogger.getLog();
+    private static final MQClientManager INSTANCE = new MQClientManager();
+    private final AtomicInteger factoryIndexGenerator = new AtomicInteger();
+    private final ConcurrentMap<String/* clientId */, MQClientInstance> factoryTable =
+            new ConcurrentHashMap<>();
 
     private MQClientManager() {
 
     }
 
     public static MQClientManager getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig) {
         return getOrCreateMQClientInstance(clientConfig, null);
     }
 
+    /**
+     * 获取或者创建一个MQClientInstance对象
+     *
+     * @param clientConfig 客户端配置
+     * @param rpcHook RPC Hook
+     * @return MQClientInstance对象
+     */
     public MQClientInstance getOrCreateMQClientInstance(final ClientConfig clientConfig, RPCHook rpcHook) {
+        // 构建客户端ID，格式clientIP@PID@uintName，uintName为可选部分，设置了则会拼接
         String clientId = clientConfig.buildMQClientId();
+        // 首先通过clientID来获取MQClientInstance对象，获取不到将进行创建，完成创建后存储到Map中
         MQClientInstance instance = this.factoryTable.get(clientId);
         if (null == instance) {
             instance =
-                new MQClientInstance(clientConfig.cloneClientConfig(),
-                    this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
+                    new MQClientInstance(clientConfig.cloneClientConfig(),
+                            this.factoryIndexGenerator.getAndIncrement(), clientId, rpcHook);
             MQClientInstance prev = this.factoryTable.putIfAbsent(clientId, instance);
             if (prev != null) {
                 instance = prev;
-                log.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
+                LOG.warn("Returned Previous MQClientInstance for clientId:[{}]", clientId);
             } else {
-                log.info("Created new MQClientInstance for clientId:[{}]", clientId);
+                LOG.info("Created new MQClientInstance for clientId:[{}]", clientId);
             }
         }
 

@@ -176,20 +176,36 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         this.start(true);
     }
 
+    /**
+     * 这里是启动消息生产者的核心代码
+     *
+     * @param startFactory 是否启动生产者工厂
+     * @throws MQClientException MQ客户端异常
+     */
     public void start(final boolean startFactory) throws MQClientException {
         switch (this.serviceState) {
+            // serviceState的默认值就是CREATE_JUST
             case CREATE_JUST:
                 this.serviceState = ServiceState.START_FAILED;
 
+                // 第一步：检查生产者组名称是否满足规范：不能为空，长度不能超过255，名称不能为DEFAULT_PRODUCER
+                // 还要符合正则表达式：^[%|a-zA-Z0-9_-]+$，否则将抛出异常，从而无法启动MQ Producer
                 this.checkConfig();
 
+                // 如果生产组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置），
+                // 那么将改变生产者的instanceName为当前生产者进程的ID，也就是PID，通常情况下，用户不需要设置rocketmq.client.name，
+                // producer之间的区分通过clientIP@PID来进行确认，有一个问题：如果一个JVM进程中既有消费者，也有生产者，那么它们的clientID是同一个
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
+                // 第二步：获取MQClientInstance对象，整个JVM进程中只有一个MQClientManager，
+                // 它是个单例，内部维护了clientID和MQClientInstance的对应关系Map，首次启动的时候会创建MQClientInstance并存入到Map中
                 this.mQClientFactory =
                         MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQProducer, rpcHook);
 
+                // 第三步：将当前的Producer注册到MQClientInstance中，在同一个JVM进程中，同一个生产者组下只能有个一个生产者
+                // 后续的一系列操作如：消息发送、心跳都将通过这个生产者来执行
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
@@ -199,9 +215,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             null);
                 }
 
+                // 第四步：设置topic的详细信息：topic的路由信息，包含MessageQueue列表、TopicRouteData等
+                // 这里仅仅是创建了一个TopicPublishInfo对象，但是没有设置具体的信息，具体的信息是在生产者启动起来后通过
+                // 定时任务拉取更新的
                 this.topicPublishInfoTable.put(this.defaultMQProducer.getCreateTopicKey(), new TopicPublishInfo());
 
                 if (startFactory) {
+                    // 第五步：启动MQClientInstance
                     mQClientFactory.start();
                 }
 
@@ -235,6 +255,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }, 1000 * 3, 1000);
     }
 
+    /**
+     * 检查生产者组是否符合规范，这里不是返回的true or false，而是不符合规范将抛出异常
+     *
+     * @throws MQClientException MQ客户端异常
+     */
     private void checkConfig() throws MQClientException {
         Validators.checkGroup(this.defaultMQProducer.getProducerGroup());
 

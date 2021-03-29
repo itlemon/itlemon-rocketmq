@@ -64,6 +64,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     protected final transient DefaultMQProducerImpl defaultMQProducerImpl;
     private final InternalLogger log = ClientLogger.getLog();
     /**
+     * 生产者组，对于非事务消息，只要保证各个进程独一无二即可，对于事务消息，通常是由Broker来从组中随机获取一个生产者来确认事务状态。
      * Producer group conceptually aggregates all producer instances of exactly same role, which is particularly
      * important when transactional messages are involved. </p>
      * <p>
@@ -74,26 +75,31 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private String producerGroup;
 
     /**
+     * 默认的一个主题，用来测试，主题名称：TBW102
      * Just for testing or demo program
      */
     private String createTopicKey = TopicValidator.AUTO_CREATE_TOPIC_KEY_TOPIC;
 
     /**
+     * 每个主题在Broker中默认创建的队列个数
      * Number of queues to create per default topic.
      */
     private volatile int defaultTopicQueueNums = 4;
 
     /**
+     * 消息发送超时时间为3秒
      * Timeout for sending messages.
      */
     private int sendMsgTimeout = 3000;
 
     /**
+     * 消息压缩的阈值，当消息体超过4K，将进行消息压缩
      * Compress message body threshold, namely, message body larger than 4k will be compressed on default.
      */
     private int compressMsgBodyOverHowmuch = 1024 * 4;
 
     /**
+     * 发送同步消息时候，如果发送失败，将有两次重试机会
      * Maximum number of retry to perform internally before claiming sending failure in synchronous mode. </p>
      * <p>
      * This may potentially cause message duplication which is up to application developers to resolve.
@@ -101,6 +107,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private int retryTimesWhenSendFailed = 2;
 
     /**
+     * 发送异步消息时候，如果发送失败，将有两次重试机会
      * Maximum number of retry to perform internally before claiming sending failure in asynchronous mode. </p>
      * <p>
      * This may potentially cause message duplication which is up to application developers to resolve.
@@ -108,16 +115,20 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private int retryTimesWhenSendAsyncFailed = 2;
 
     /**
+     * 当消息重试阶段，选择另外一个Broker的时候，是否不等待Broker的存储结果就返回，默认值为false
      * Indicate whether to retry another broker on sending failure internally.
      */
     private boolean retryAnotherBrokerWhenNotStoreOK = false;
 
     /**
+     * 消息体最大值为4M
      * Maximum allowed message size in bytes.
      */
     private int maxMessageSize = 1024 * 1024 * 4; // 4M
 
     /**
+     * 在开启消息轨迹后，该类通过hook的方式把消息生产者，消息存储的broker和消费者消费消息的信息像链路一样记录下来。
+     * 在构造生产者时根据构造入参enableMsgTrace来决定是否创建该对象。
      * Interface of asynchronous transfer data
      */
     private TraceDispatcher traceDispatcher = null;
@@ -253,9 +264,9 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
                 AsyncTraceDispatcher dispatcher =
                         new AsyncTraceDispatcher(producerGroup, TraceDispatcher.Type.PRODUCE, customizedTraceTopic,
                                 rpcHook);
-                dispatcher.setHostProducer(this.getDefaultMQProducerImpl());
+                dispatcher.setHostProducer(this.defaultMQProducerImpl);
                 traceDispatcher = dispatcher;
-                this.getDefaultMQProducerImpl().registerSendMessageHook(
+                this.defaultMQProducerImpl.registerSendMessageHook(
                         new SendMessageTraceHookImpl(traceDispatcher));
             } catch (Throwable e) {
                 log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
@@ -273,8 +284,14 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
      */
     @Override
     public void start() throws MQClientException {
+        // 设置生产者组，如果在创建DefaultMQProducer指定了namespace，那么将会把namespace%producerGroup作为生产者组
+        // withNamespace内部对producerGroup做了一些处理，主要是处理传入的producerGroup与RocketMQ预留的系统属性之间的关系
+        // 一般设置的生产组都与业务相关
         this.setProducerGroup(withNamespace(this.producerGroup));
+        // 这是DefaultMQProducer的启动是调用的defaultMQProducerImpl的start方法
         this.defaultMQProducerImpl.start();
+        // 下面的代码是设置消息轨迹的Dispatcher，如果在构造DefaultMQProducer对象的时候指定了消息轨迹Dispatcher
+        // 那么Dispatcher也将会启动起来，这里暂时不讨论消息估计，后续将有专门的章节来介绍消息轨迹
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
