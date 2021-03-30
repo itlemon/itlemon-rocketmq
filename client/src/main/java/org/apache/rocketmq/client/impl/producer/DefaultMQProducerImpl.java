@@ -192,7 +192,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 // 还要符合正则表达式：^[%|a-zA-Z0-9_-]+$，否则将抛出异常，从而无法启动MQ Producer
                 this.checkConfig();
 
-                // 如果生产组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置），
+                // 如果生产者组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置），
                 // 那么将改变生产者的instanceName为当前生产者进程的ID，也就是PID，通常情况下，用户不需要设置rocketmq.client.name，
                 // producer之间的区分通过clientIP@PID来进行确认，有一个问题：如果一个JVM进程中既有消费者，也有生产者，那么它们的clientID是同一个
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {

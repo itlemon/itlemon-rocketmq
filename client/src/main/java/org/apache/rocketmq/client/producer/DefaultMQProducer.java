@@ -291,7 +291,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         // 这是DefaultMQProducer的启动是调用的defaultMQProducerImpl的start方法
         this.defaultMQProducerImpl.start();
         // 下面的代码是设置消息轨迹的Dispatcher，如果在构造DefaultMQProducer对象的时候指定了消息轨迹Dispatcher
-        // 那么Dispatcher也将会启动起来，这里暂时不讨论消息估计，后续将有专门的章节来介绍消息轨迹
+        // 那么Dispatcher也将会启动起来，这里暂时不讨论消息轨迹，后续将有专门的章节来介绍消息轨迹
         if (null != traceDispatcher) {
             try {
                 traceDispatcher.start(this.getNamesrvAddr(), this.getAccessChannel());
