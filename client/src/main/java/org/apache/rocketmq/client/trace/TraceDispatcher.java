@@ -28,6 +28,9 @@ import java.io.IOException;
  */
 public interface TraceDispatcher {
     enum Type {
+        /**
+         * 消息分发器类型
+         */
         PRODUCE,
         CONSUME
     }

@@ -192,7 +192,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 // 还要符合正则表达式：^[%|a-zA-Z0-9_-]+$，否则将抛出异常，从而无法启动MQ Producer
                 this.checkConfig();
 
-                // 如果生产者组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置），
+                // 如果生产者组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置，默认值是DEFAULT），
                 // 那么将改变生产者的instanceName为当前生产者进程的ID，也就是PID，通常情况下，用户不需要设置rocketmq.client.name，
                 // producer之间的区分通过clientIP@PID来进行确认，有一个问题：如果一个JVM进程中既有消费者，也有生产者，那么它们的clientID是同一个
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
@@ -241,8 +241,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 break;
         }
 
+        // 第六步：发送心跳给所有的Broker
         this.mQClientFactory.sendHeartbeatToAllBrokerWithLock();
 
+        // 第七步：启动线程定时清理超时的请求
         this.timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -261,12 +263,16 @@ public class DefaultMQProducerImpl implements MQProducerInner {
      * @throws MQClientException MQ客户端异常
      */
     private void checkConfig() throws MQClientException {
+
+        // 检查生产者组是否为空，长度是否超过255，是否符合正则表达式：^[%|a-zA-Z0-9_-]+$，这三个条件中有一条不符合，那么认为生产者组名称校验失败，直接抛出异常
         Validators.checkGroup(this.defaultMQProducer.getProducerGroup());
 
+        // 这里为null的检验其实可以删除，因为上面的代码已经检查过了
         if (null == this.defaultMQProducer.getProducerGroup()) {
             throw new MQClientException("producerGroup is null", null);
         }
 
+        // 检查生产者组名称是否为DEFAULT_PRODUCER，如果是，则直接抛出异常，出现为DEFAULT_PRODUCER情况是因为在构建生产者的时候，没有设置生产者组
         if (this.defaultMQProducer.getProducerGroup().equals(MixAll.DEFAULT_PRODUCER_GROUP)) {
             throw new MQClientException(
                     "producerGroup can not equal " + MixAll.DEFAULT_PRODUCER_GROUP + ", please specify another one.",
@@ -301,7 +307,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     @Override
     public Set<String> getPublishTopicList() {
-        Set<String> topicList = new HashSet<String>();
+        Set<String> topicList = new HashSet<>();
         for (String key : this.topicPublishInfoTable.keySet()) {
             topicList.add(key);
         }

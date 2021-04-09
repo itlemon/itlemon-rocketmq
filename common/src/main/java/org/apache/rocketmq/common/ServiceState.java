@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.common;
 
+/**
+ * @author itlemon
+ */
 public enum ServiceState {
     /**
      * Service just created,not start
@@ -32,5 +35,5 @@ public enum ServiceState {
     /**
      * Service Start failure
      */
-    START_FAILED;
+    START_FAILED
 }

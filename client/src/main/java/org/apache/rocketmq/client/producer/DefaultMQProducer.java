@@ -93,7 +93,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     private int sendMsgTimeout = 3000;
 
     /**
-     * 消息压缩的阈值，当消息体超过4K，将进行消息压缩
+     * 消息压缩的阈值，当消息体超过4Kb，将进行消息压缩
      * Compress message body threshold, namely, message body larger than 4k will be compressed on default.
      */
     private int compressMsgBodyOverHowmuch = 1024 * 4;
@@ -257,8 +257,9 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
             boolean enableMsgTrace, final String customizedTraceTopic) {
         this.namespace = namespace;
         this.producerGroup = producerGroup;
+        // 创建defaultMQProducerImpl对象
         defaultMQProducerImpl = new DefaultMQProducerImpl(this, rpcHook);
-        //if client open the message trace feature
+        // 如果使用了消息轨迹特性，那么将初始化消息轨迹相关的逻辑
         if (enableMsgTrace) {
             try {
                 AsyncTraceDispatcher dispatcher =
@@ -288,7 +289,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
         // withNamespace内部对producerGroup做了一些处理，主要是处理传入的producerGroup与RocketMQ预留的系统属性之间的关系
         // 一般设置的生产组都与业务相关
         this.setProducerGroup(withNamespace(this.producerGroup));
-        // 这是DefaultMQProducer的启动是调用的defaultMQProducerImpl的start方法
+        // 这里DefaultMQProducer的启动是调用的defaultMQProducerImpl的start方法
         this.defaultMQProducerImpl.start();
         // 下面的代码是设置消息轨迹的Dispatcher，如果在构造DefaultMQProducer对象的时候指定了消息轨迹Dispatcher
         // 那么Dispatcher也将会启动起来，这里暂时不讨论消息轨迹，后续将有专门的章节来介绍消息轨迹

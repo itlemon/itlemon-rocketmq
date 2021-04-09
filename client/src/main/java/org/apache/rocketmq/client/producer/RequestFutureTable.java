@@ -27,16 +27,19 @@ import org.apache.rocketmq.client.exception.RequestTimeoutException;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 
+/**
+ * @author itlemon
+ */
 public class RequestFutureTable {
     private static InternalLogger log = ClientLogger.getLog();
-    private static ConcurrentHashMap<String, RequestResponseFuture> requestFutureTable = new ConcurrentHashMap<String, RequestResponseFuture>();
+    private static ConcurrentHashMap<String, RequestResponseFuture> requestFutureTable = new ConcurrentHashMap<>();
 
     public static ConcurrentHashMap<String, RequestResponseFuture> getRequestFutureTable() {
         return requestFutureTable;
     }
 
     public static void scanExpiredRequest() {
-        final List<RequestResponseFuture> rfList = new LinkedList<RequestResponseFuture>();
+        final List<RequestResponseFuture> rfList = new LinkedList<>();
         Iterator<Map.Entry<String, RequestResponseFuture>> it = requestFutureTable.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, RequestResponseFuture> next = it.next();
