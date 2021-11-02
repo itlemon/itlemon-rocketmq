@@ -34,7 +34,7 @@ public class Producer {
         // 构建生产者实例，这里使用默认的topic：TBW102
         DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
         // 设置namesever地址
-        producer.setNamesrvAddr("127.0.0.1:9876");
+        producer.setNamesrvAddr("127.0.0.1:4444");
         // 启动生产者
         producer.start();
 
