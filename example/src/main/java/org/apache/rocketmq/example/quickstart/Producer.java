@@ -33,7 +33,8 @@ public class Producer {
 
         // 构建生产者实例，这里使用默认的topic：TBW102
         DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
-        // 设置namesever地址
+        // 设置namesever地址，由于我的文章案例里面的namesrv的端口号用自定义4444，所以这里设置为4444
+        // 其他读者根据自己实际情况填写端口号
         producer.setNamesrvAddr("127.0.0.1:4444");
         // 启动生产者
         producer.start();
