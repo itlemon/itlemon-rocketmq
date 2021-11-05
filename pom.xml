@@ -238,7 +238,8 @@
                             <includeTestSourceDirectory>false</includeTestSourceDirectory>
                         </configuration>
                         <goals>
-                            <goal>check</goal>
+                            <!-- 关闭检查 -->
+                            <!-- <goal>check</goal> -->
                         </goals>
                     </execution>
                 </executions>
