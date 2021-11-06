@@ -214,6 +214,7 @@ public class MQClientAPIImpl {
 
     public String fetchNameServerAddr() {
         try {
+            // 这里是具体调用Http接口获取NameServer地址的逻辑，
             String addrs = this.topAddressing.fetchNSAddr();
             if (addrs != null) {
                 if (!addrs.equals(this.nameSrvAddr)) {

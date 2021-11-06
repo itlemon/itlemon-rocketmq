@@ -223,14 +223,35 @@ public class MQClientInstance {
                 case CREATE_JUST:
                     this.serviceState = ServiceState.START_FAILED;
                     // If not specified,looking address from name server
+                    // 如果Producer在启动之前没有没有设置NameServer地址，那么将在此处调用Http接口去获取NameServer地址
+                    // 具体是从哪个接口下去拉取NameServer地址，进入到fetchNameServerAddr中就可以知道，这里直接给出默认的API如下：
+                    // http://jmenv.tbsite.net:8080/rocketmq/nsaddr，就是Producer主动寻址的API，用于可以配置环境变量
+                    // rocketmq.namesrv.domain来指定域名（可以加上端口），如果没指定，那么就是默认值jmenv.tbsite.net:8080
+                    // 当然用户也可以在Producer所在机器配置hosts，将jmenv.tbsite.net指向服务IP，这么设计的好处是可以动态设置
+                    // NameServer的服务地址，当NameServer出故障的时候，可以动态迁移。
                     if (null == this.clientConfig.getNamesrvAddr()) {
+                        // 调用Http接口获取NameServer地址的逻辑就在下面的方法中
                         this.mQClientAPIImpl.fetchNameServerAddr();
                     }
+
                     // Start request-response channel
+                    // 建立底层通信channel，MQClientAPIImpl.start方法最后调用RemotingClient的start方法，
+                    // 而remotingClient调用了netty建立底层通信的具体逻辑
                     this.mQClientAPIImpl.start();
+
                     // Start various schedule tasks
+                    // 这里启动各种定时任务，如下所示：
+                    // 1.这是一个定时更新NameServer地址的定时任务，每隔2分定时更新一次
+                    // 2.从NameServer拉取topic路由信息的时间间隔，默认30秒
+                    // 3.默认30s清理不在线（故障）的Broker信息，以及向所有Broker发送心跳信息
+                    // 4.默认每5s持久化一次消费的进度（offset）
+                    // 5.默认每分钟根据消费者数量调整消费线程，这个和消费者有关，在生产者里，consumerTable为空，所以为空跑
                     this.startScheduledTask();
+
                     // Start pull service
+                    // pullMessageService和rebalanceService都是消费者客户端需要做的事情，这里简单讲解下这两个
+                    // 分别是拉取消息的线程启动和rebalance的线程启动，后续讲解消费者的时候这里将修改注释。
+                    // 由于生产者和消费者内部实现都是共用的MQClientInstance，所以这里也有消费者的相关实现
                     this.pullMessageService.start();
                     // Start rebalance service
                     this.rebalanceService.start();
@@ -247,8 +268,12 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 消息生产者启动过程依赖此方法启动各种定时任务
+     */
     private void startScheduledTask() {
         if (null == this.clientConfig.getNamesrvAddr()) {
+            // 1.这是一个定时更新NameServer地址的定时任务，每隔2分定时更新一次
             this.scheduledExecutorService.scheduleAtFixedRate(() -> {
                 try {
                     MQClientInstance.this.mQClientAPIImpl.fetchNameServerAddr();
@@ -258,6 +283,7 @@ public class MQClientInstance {
             }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
         }
 
+        // 2.从NameServer拉取topic路由信息的时间间隔，默认30秒
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.updateTopicRouteInfoFromNameServer();
@@ -266,6 +292,7 @@ public class MQClientInstance {
             }
         }, 10, this.clientConfig.getPollNameServerInterval(), TimeUnit.MILLISECONDS);
 
+        // 3.默认30s清理不在线（故障）的Broker信息，以及向所有Broker发送心跳信息
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.cleanOfflineBroker();
@@ -275,6 +302,7 @@ public class MQClientInstance {
             }
         }, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
+        // 4.默认每5s持久化一次消费的进度（offset）
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.persistAllConsumerOffset();
@@ -283,6 +311,7 @@ public class MQClientInstance {
             }
         }, 1000 * 10, this.clientConfig.getPersistConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
+        // 5.默认每分钟调整消费线程，这个和消费者有关，在生产者里，consumerTable为空，所以为空跑
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.adjustThreadPool();
@@ -361,7 +390,7 @@ public class MQClientInstance {
         try {
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS))
                 try {
-                    ConcurrentHashMap<String, HashMap<Long, String>> updatedTable = new ConcurrentHashMap<String, HashMap<Long, String>>();
+                    ConcurrentHashMap<String, HashMap<Long, String>> updatedTable = new ConcurrentHashMap<>();
 
                     Iterator<Entry<String, HashMap<Long, String>>> itBrokerTable = this.brokerAddrTable.entrySet().iterator();
                     while (itBrokerTable.hasNext()) {
@@ -369,7 +398,7 @@ public class MQClientInstance {
                         String brokerName = entry.getKey();
                         HashMap<Long, String> oneTable = entry.getValue();
 
-                        HashMap<Long, String> cloneAddrTable = new HashMap<Long, String>();
+                        HashMap<Long, String> cloneAddrTable = new HashMap<>();
                         cloneAddrTable.putAll(oneTable);
 
                         Iterator<Entry<Long, String>> it = cloneAddrTable.entrySet().iterator();
