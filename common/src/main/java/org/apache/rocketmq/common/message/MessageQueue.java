@@ -70,26 +70,31 @@ public class MessageQueue implements Comparable<MessageQueue>, Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         MessageQueue other = (MessageQueue) obj;
         if (brokerName == null) {
-            if (other.brokerName != null)
+            if (other.brokerName != null) {
                 return false;
-        } else if (!brokerName.equals(other.brokerName))
+            }
+        } else if (!brokerName.equals(other.brokerName)) {
             return false;
-        if (queueId != other.queueId)
+        }
+        if (queueId != other.queueId) {
             return false;
+        }
         if (topic == null) {
-            if (other.topic != null)
-                return false;
-        } else if (!topic.equals(other.topic))
-            return false;
-        return true;
+            return other.topic == null;
+        } else {
+            return topic.equals(other.topic);
+        }
     }
 
     @Override

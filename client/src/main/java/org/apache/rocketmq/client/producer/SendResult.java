@@ -17,8 +17,12 @@
 package org.apache.rocketmq.client.producer;
 
 import com.alibaba.fastjson.JSON;
+
 import org.apache.rocketmq.common.message.MessageQueue;
 
+/**
+ * @author itlemon
+ */
 public class SendResult {
     private SendStatus sendStatus;
     private String msgId;
@@ -33,7 +37,7 @@ public class SendResult {
     }
 
     public SendResult(SendStatus sendStatus, String msgId, String offsetMsgId, MessageQueue messageQueue,
-        long queueOffset) {
+            long queueOffset) {
         this.sendStatus = sendStatus;
         this.msgId = msgId;
         this.offsetMsgId = offsetMsgId;
@@ -42,8 +46,8 @@ public class SendResult {
     }
 
     public SendResult(final SendStatus sendStatus, final String msgId, final MessageQueue messageQueue,
-        final long queueOffset, final String transactionId,
-        final String offsetMsgId, final String regionId) {
+            final long queueOffset, final String transactionId,
+            final String offsetMsgId, final String regionId) {
         this.sendStatus = sendStatus;
         this.msgId = msgId;
         this.messageQueue = messageQueue;
@@ -127,7 +131,8 @@ public class SendResult {
 
     @Override
     public String toString() {
-        return "SendResult [sendStatus=" + sendStatus + ", msgId=" + msgId + ", offsetMsgId=" + offsetMsgId + ", messageQueue=" + messageQueue
-            + ", queueOffset=" + queueOffset + "]";
+        return "SendResult [sendStatus=" + sendStatus + ", msgId=" + msgId + ", offsetMsgId=" + offsetMsgId
+                + ", messageQueue=" + messageQueue
+                + ", queueOffset=" + queueOffset + "]";
     }
 }

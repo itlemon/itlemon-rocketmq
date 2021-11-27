@@ -192,7 +192,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 // 还要符合正则表达式：^[%|a-zA-Z0-9_-]+$，否则将抛出异常，从而无法启动MQ Producer
                 this.checkConfig();
 
-                // 如果生产者组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client.name来设置，默认值是DEFAULT），
+                // 如果生产者组不是RocketMQ内部生产者组"CLIENT_INNER_PRODUCER"，且没有指定生产者instanceName属性（通过环境变量rocketmq.client
+                // .name来设置，默认值是DEFAULT），
                 // 那么将改变生产者的instanceName为当前生产者进程的ID，也就是PID，通常情况下，用户不需要设置rocketmq.client.name，
                 // producer之间的区分通过clientIP@PID来进行确认，有一个问题：如果一个JVM进程中既有消费者，也有生产者，那么它们的clientID是同一个
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
@@ -578,33 +579,64 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     }
 
+    /**
+     * 发送消息的核心方法
+     *
+     * @param msg 消息
+     * @param communicationMode 发送方式：同步发送、异步发送、单向发送
+     * @param sendCallback 回调
+     * @param timeout 超时时间，默认值为3s
+     * @return 发送结果
+     * @throws MQClientException MQ客户端异常
+     * @throws RemotingException 通信异常
+     * @throws MQBrokerException MQ Broker异常
+     * @throws InterruptedException 线程中断异常
+     */
     private SendResult sendDefaultImpl(
             Message msg,
             final CommunicationMode communicationMode,
             final SendCallback sendCallback,
             final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        // 第一步：确保服务已经处于RUNNING状态，也就是生成启动后会设置为RUNNING状态，如果没有启动，则无法进行下一步
+        // 第一步：确保服务已经处于RUNNING状态，也就是进程启动后会设置为RUNNING状态，如果没有启动，则无法进行下一步
         this.makeSureStateOK();
 
         // 第二步：对消息再进行一次校验，校验规则这里不再赘述
         Validators.checkMessage(msg, this.defaultMQProducer);
+
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
         long beginTimestampPrev = beginTimestampFirst;
         long endTimestamp = beginTimestampFirst;
+
+        // 第三步：查找主题路由信息，这是发送消息前很重要的一步，只有查找到了路由信息，生产者才知道将消息发送到哪个Broker上
+        // 这里优先从本地缓存查找路由信息，如果没有找到，那么将实时去NameServer拉取，如果没有拉取到路由信息，那么将使用默认
+        // 的topic：TBW102来拉取路由信息，至于能不能找到默认topic的路由信息，这就得看RMQ集群在启动的时候是否设置允许默认的
+        // topic路由信息存在，具体设置是BrokerConfig的autoCreateTopicEnable属性，默认是true，如果最终设置的是true，那么
+        // 将使用默认topic的路由信息，并更新本地路由信息
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
+            // 定义一些基本变量
             boolean callTimeout = false;
             MessageQueue mq = null;
             Exception exception = null;
             SendResult sendResult = null;
+
+            // 第四步：获取消息发送的总次数（含重试次数，如果某次发送成功，那么剩下的次数将不再继续发送），如果是同步发送，
+            // 那么timesTotal = 3（1次正式发送，2次重试机会），其他的发送方式，timesTotal = 1
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer
                     .getRetryTimesWhenSendFailed() : 1;
+
             int times = 0;
             String[] brokersSent = new String[timesTotal];
             for (; times < timesTotal; times++) {
+                // 这里记录一下上一次发送的brokerName，如果是第一次发送，那么lastBrokerName = null，
+                // 如果第一次发送失败，这里将记录上一次发送失败的brokerName，这样本次发送就可以选择是避开这个发送失败的Broker，
+                // 还是继续重试这个Broker，这是一种客户端避险的一种措施，为的是提高发送消息的成功率
                 String lastBrokerName = null == mq ? null : mq.getBrokerName();
+
+                // 第五步：选择一个消息队列去发送消息，内部在选择MessageQueue的时候，将根据设置是去规避故障Broker还是
+                // 采用Broker故障延迟机制来发消息，这里简单说明，后面我们将重点学习RMQ是如何选择MessageQueue的。
                 MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);
                 if (mqSelected != null) {
                     mq = mqSelected;
@@ -615,19 +647,23 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                             //Reset topic with namespace during resend.
                             msg.setTopic(this.defaultMQProducer.withNamespace(msg.getTopic()));
                         }
+
+                        // 本次发送时间戳和开始的时间戳对比，是否已经超过设置的超时时间，超过直接退出循环
                         long costTime = beginTimestampPrev - beginTimestampFirst;
                         if (timeout < costTime) {
                             callTimeout = true;
                             break;
                         }
 
+                        // 第六步：正式开始发送消息
                         sendResult = this.sendKernelImpl(msg, mq, communicationMode, sendCallback, topicPublishInfo,
                                 timeout - costTime);
+
+                        // 本次发送结束，记录结束时间戳
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, false);
                         switch (communicationMode) {
                             case ASYNC:
-                                return null;
                             case ONEWAY:
                                 return null;
                             case SYNC:
@@ -736,17 +772,31 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
     }
 
+    /**
+     * 根据topic查找路由信息
+     *
+     * @param topic topic
+     * @return 路由信息
+     */
     private TopicPublishInfo tryToFindTopicPublishInfo(final String topic) {
+        // 首先从Map中去搜索指定topic的路由信息，这个路由信息是在生产者启动过程中指定一个定时任务去NameServer中加载过来的
         TopicPublishInfo topicPublishInfo = this.topicPublishInfoTable.get(topic);
+
+        // 如果topic的路由信息为空，或者路由信息中messageQueueList为null或者空，那么该生产者将立即去NameServer加载路由信息
         if (null == topicPublishInfo || !topicPublishInfo.ok()) {
             this.topicPublishInfoTable.putIfAbsent(topic, new TopicPublishInfo());
+            // 更新指定的topic的路由信息
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
         }
 
+        // 如果topicPublishInfo的haveTopicRouterInfo的字段为true，或者messageQueueList不为空，
+        // 那么就认为这个topicPublishInfo是有效的
         if (topicPublishInfo.isHaveTopicRouterInfo() || topicPublishInfo.ok()) {
             return topicPublishInfo;
         } else {
+            // 经过立即拉取NameServer中topic的路由信息，还是走到这个分支，说明当前topic是没有路由信息，
+            // 所以这里使用默认的topic：TBW102来拉取路由信息
             this.mQClientFactory.updateTopicRouteInfoFromNameServer(topic, true, this.defaultMQProducer);
             topicPublishInfo = this.topicPublishInfoTable.get(topic);
             return topicPublishInfo;
