@@ -343,8 +343,16 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
     @Override
     public SendResult send(
             Message msg) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 检查消息是否符合要求，具体要求如下所示：
+        // 1.Message对象不能为null
+        // 2.msg中的topic不能为空，且要符合正则表达式"^[%|a-zA-Z0-9_-]+$"，且长度不能超过127，且topic名称不能为SCHEDULE_TOPIC_XXXX
+        // 3.消息体body不能为空，且大小不能超过默认值4M（或者用户配置的最大值）
         Validators.checkMessage(msg, this);
+
+        // 设置topic，这里面会涉及打namespace的设置等，如果没有设置namespace，topic将保持与用户设置的一致
         msg.setTopic(withNamespace(msg.getTopic()));
+
+        // 真正发送消息的方法
         return this.defaultMQProducerImpl.send(msg);
     }
 

@@ -228,6 +228,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 log.info("the producer [{}] start OK. sendMessageWithVIPChannel={}",
                         this.defaultMQProducer.getProducerGroup(),
                         this.defaultMQProducer.isSendMessageWithVIPChannel());
+
+                // 启动完成将服务状态设置为RUNNING，后续发送消息的时候会校验这个状态
                 this.serviceState = ServiceState.RUNNING;
                 break;
             case RUNNING:
@@ -582,7 +584,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             final SendCallback sendCallback,
             final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 第一步：确保服务已经处于RUNNING状态，也就是生成启动后会设置为RUNNING状态，如果没有启动，则无法进行下一步
         this.makeSureStateOK();
+
+        // 第二步：对消息再进行一次校验，校验规则这里不再赘述
         Validators.checkMessage(msg, this.defaultMQProducer);
         final long invokeID = random.nextLong();
         long beginTimestampFirst = System.currentTimeMillis();
@@ -1384,6 +1389,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     public SendResult send(Message msg,
             long timeout) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
+        // 这里调用的是sendDefaultImpl方法，也是发送逻辑的主要方法，默认是同步发送，超时时间是3s
         return this.sendDefaultImpl(msg, CommunicationMode.SYNC, null, timeout);
     }
 
