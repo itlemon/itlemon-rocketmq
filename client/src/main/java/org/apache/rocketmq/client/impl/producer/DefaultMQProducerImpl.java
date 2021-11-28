@@ -665,6 +665,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         switch (communicationMode) {
                             case ASYNC:
                             case ONEWAY:
+                                // 异步发送和单向发送没有返回值
                                 return null;
                             case SYNC:
                                 if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
