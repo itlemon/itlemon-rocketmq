@@ -598,7 +598,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             final SendCallback sendCallback,
             final long timeout
     ) throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
-        // 第一步：确保服务已经处于RUNNING状态，也就是进程启动后会设置为RUNNING状态，如果没有启动，则无法进行下一步
+        // 第一步：在消息发送之前，确保服务已经处于RUNNING状态，也就是进程启动后会设置为RUNNING状态，如果没有启动，则无法进行下一步
         this.makeSureStateOK();
 
         // 第二步：对消息再进行一次校验，校验规则这里不再赘述
@@ -623,7 +623,8 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             SendResult sendResult = null;
 
             // 第四步：获取消息发送的总次数（含重试次数，如果某次发送成功，那么剩下的次数将不再继续发送），如果是同步发送，
-            // 那么timesTotal = 3（1次正式发送，2次重试机会），其他的发送方式，timesTotal = 1
+            // 那么timesTotal = 3（1次正式发送，2次重试机会），其他的发送方式，timesTotal = 1，这里其他的发送方式
+            // 是指异步发送和单项发送，不是说这两种方式没有重试机会，而是它们的重试机会在异步流程中实现的
             int timesTotal = communicationMode == CommunicationMode.SYNC ? 1 + this.defaultMQProducer
                     .getRetryTimesWhenSendFailed() : 1;
 
@@ -669,16 +670,20 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                                 return null;
                             case SYNC:
                                 if (sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                                    // 如果发送失败，允许重试，则进行continue重试，否则直接返回发送结果
                                     if (this.defaultMQProducer.isRetryAnotherBrokerWhenNotStoreOK()) {
                                         continue;
                                     }
                                 }
 
+                                // 发送完毕后返回结果
                                 return sendResult;
                             default:
                                 break;
                         }
-                    } catch (RemotingException e) {
+
+                    // 如果出现网络异常和MQ客户端异常，那么记录相关日志，并重试
+                    } catch (RemotingException | MQClientException e) {
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
                         log.warn(String.format(
@@ -686,16 +691,6 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                                 invokeID, endTimestamp - beginTimestampPrev, mq), e);
                         log.warn(msg.toString());
                         exception = e;
-                        continue;
-                    } catch (MQClientException e) {
-                        endTimestamp = System.currentTimeMillis();
-                        this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
-                        log.warn(String.format(
-                                "sendKernelImpl exception, resend at once, InvokeID: %s, RT: %sms, Broker: %s",
-                                invokeID, endTimestamp - beginTimestampPrev, mq), e);
-                        log.warn(msg.toString());
-                        exception = e;
-                        continue;
                     } catch (MQBrokerException e) {
                         endTimestamp = System.currentTimeMillis();
                         this.updateFaultItem(mq.getBrokerName(), endTimestamp - beginTimestampPrev, true);
@@ -705,6 +700,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                         log.warn(msg.toString());
                         exception = e;
                         switch (e.getResponseCode()) {
+                            // 以下Broker返回的异常类型，都是需要重试的
                             case ResponseCode.TOPIC_NOT_EXIST:
                             case ResponseCode.SERVICE_NOT_AVAILABLE:
                             case ResponseCode.SYSTEM_ERROR:
@@ -766,8 +762,10 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             throw mqClientException;
         }
 
+        // 能走到这里，说明配置是异常的，所以这里校验是否是NameServer列表为空
         validateNameServerSetting();
 
+        // 这里直接抛出异常
         throw new MQClientException(
                 "No route info of this topic: " + msg.getTopic() + FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO),
                 null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
