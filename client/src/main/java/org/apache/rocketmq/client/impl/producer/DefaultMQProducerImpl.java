@@ -613,7 +613,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         // 这里优先从本地缓存查找路由信息，如果没有找到，那么将实时去NameServer拉取，如果没有拉取到路由信息，那么将使用默认
         // 的topic：TBW102来拉取路由信息，至于能不能找到默认topic的路由信息，这就得看RMQ集群在启动的时候是否设置允许默认的
         // topic路由信息存在，具体设置是BrokerConfig的autoCreateTopicEnable属性，默认是true，如果最终设置的是true，那么
-        // 将使用默认topic的路由信息，并更新本地路由信息
+        // 将使用默认topic的路由信息，并更新本地路由信息，如果最终没有找到，将抛出NOT_FOUND_TOPIC_EXCEPTION异常
         TopicPublishInfo topicPublishInfo = this.tryToFindTopicPublishInfo(msg.getTopic());
         if (topicPublishInfo != null && topicPublishInfo.ok()) {
             // 定义一些基本变量
