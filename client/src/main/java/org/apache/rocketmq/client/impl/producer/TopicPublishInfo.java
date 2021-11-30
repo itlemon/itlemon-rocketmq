@@ -28,10 +28,29 @@ import org.apache.rocketmq.common.protocol.route.TopicRouteData;
  * @author itlemon
  */
 public class TopicPublishInfo {
+    /**
+     * 是否是顺序消息
+     */
     private boolean orderTopic = false;
+
+    /**
+     * 该topic是否是否含有路由信息
+     */
     private boolean haveTopicRouterInfo = false;
+
+    /**
+     * 消息队列列表
+     */
     private List<MessageQueue> messageQueueList = new ArrayList<>();
+
+    /**
+     * 用于消息队列选择的索引标识，每次选择一次队列，该值会增加1，当超过Integer.MAX_VALUE后，重置为0，重头开始
+     */
     private volatile ThreadLocalIndex sendWhichQueue = new ThreadLocalIndex();
+
+    /**
+     * Topic路由数据，具体包含：QueueDataList、BrokerDataList以及Broker上的服务过滤器的地址列表等
+     */
     private TopicRouteData topicRouteData;
 
     public boolean isOrderTopic() {
