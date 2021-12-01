@@ -157,6 +157,13 @@ public class MQClientInstance {
                 RemotingCommand.getSerializeTypeConfigInThisServer());
     }
 
+    /**
+     * topicRouteData信息转换成TopicPublishInfo信息
+     *
+     * @param topic topic
+     * @param route topic路由信息
+     * @return 转换后的TopicPublishInfo信息
+     */
     public static TopicPublishInfo topicRouteData2TopicPublishInfo(final String topic, final TopicRouteData route) {
         TopicPublishInfo info = new TopicPublishInfo();
         info.setTopicRouteData(route);
@@ -629,17 +636,30 @@ public class MQClientInstance {
         }
     }
 
+    /**
+     * 更新指定的topic的路由信息
+     *
+     * @param topic topic
+     * @param isDefault 是否是默认的topic
+     * @param defaultMQProducer MQProducer对象
+     * @return 是否拉取成功
+     */
     public boolean updateTopicRouteInfoFromNameServer(final String topic, boolean isDefault,
             DefaultMQProducer defaultMQProducer) {
         try {
+            // 更新指定topic的路由信息加了一个锁，且设置了3秒的超时时间，防止死锁
             if (this.lockNamesrv.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     TopicRouteData topicRouteData;
+                    // 如果isDefault=true，那么表示使用默认topic来进行查询，默认topic是TBW102
                     if (isDefault && defaultMQProducer != null) {
+                        // 这里底层调用netty来进行远程调用，去查询默认topic：TBW102的路由信息
                         topicRouteData = this.mQClientAPIImpl.getDefaultTopicRouteInfoFromNameServer(
                                 defaultMQProducer.getCreateTopicKey(),
                                 1000 * 3);
                         if (topicRouteData != null) {
+                            // 找到了默认topic的路由信息，这里需要设置合适的读写队列个数，取生产者默认的读写队列个数和默认topic
+                            // 路由信息中的读写队列个数的较小者
                             for (QueueData data : topicRouteData.getQueueDatas()) {
                                 int queueNums =
                                         Math.min(defaultMQProducer.getDefaultTopicQueueNums(), data.getReadQueueNums());
@@ -648,28 +668,43 @@ public class MQClientInstance {
                             }
                         }
                     } else {
+                        // 如果isDefault=false，那么将使用指定的topic去NameServer拉取路由信息
                         topicRouteData = this.mQClientAPIImpl.getTopicRouteInfoFromNameServer(topic, 1000 * 3);
                     }
+                    // 如果拉取到了topic的路由信息，将进行本地路由信息缓存构建等操作
                     if (topicRouteData != null) {
+                        // 获取本地缓存中的topic路由信息，第一次发送消息，这里的old一定为null
                         TopicRouteData old = this.topicRouteTable.get(topic);
+                        // 对一下本地缓存中的路由信息和NameServer中的路由信息，是否发生变化
+                        // 主要是比较两者的QueueDataList和BrokerDataList是否不同
                         boolean changed = topicRouteDataIsChange(old, topicRouteData);
                         if (!changed) {
+                            // 如果走到这里，说明新老的TopicRouteData没有发生变化，但是这里还是需要进一步检查
+                            // DefaultMQProducerImpl中的路由信息是否OK，如果不OK，那么还是需要更新一下
+                            // DefaultMQProducerImpl中的路由信息的。
                             changed = this.isNeedUpdateTopicRouteInfo(topic);
                         } else {
+                            // 如果发生了变化，这里将打印一个warn日志
                             log.info("the topic[{}] route info changed, old[{}] ,new[{}]", topic, old, topicRouteData);
                         }
 
                         if (changed) {
+                            // 新老路由信息发生变化，或者检查到DefaultMQProducerImpl中的路由信息需要更新
                             TopicRouteData cloneTopicRouteData = topicRouteData.cloneTopicRouteData();
 
+                            // 更新brokerAddrTable中的缓存
                             for (BrokerData bd : topicRouteData.getBrokerDatas()) {
                                 this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
                             }
 
                             // Update Pub info
+                            // 更新生产者中的路由信息缓存
                             {
+                                // 将topicRouteData转换成topicPublishInfo
                                 TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
+                                // 转换完毕后，topicPublishInfo设置haveTopicRouterInfo属性为true
                                 publishInfo.setHaveTopicRouterInfo(true);
+                                // 更新DefaultMQProducerImpl对象中的路由信息
                                 Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
                                 while (it.hasNext()) {
                                     Entry<String, MQProducerInner> entry = it.next();
@@ -681,7 +716,10 @@ public class MQClientInstance {
                             }
 
                             // Update sub info
+                            // 更新消费者中的路由信息缓存
                             {
+                                // 将路由信息更新到消费者的MessageQueue的集合中，其中要求MessageQueue要有被读权限才可以加入
+                                // 到消费者的消息队列集合中，这样消费者才可以读取
                                 Set<MessageQueue> subscribeInfo =
                                         topicRouteData2TopicSubscribeInfo(topic, topicRouteData);
                                 Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
@@ -840,6 +878,7 @@ public class MQClientInstance {
 
     private boolean isNeedUpdateTopicRouteInfo(final String topic) {
         boolean result = false;
+        // 生产者检查指定topic的路由新是否ok
         {
             Iterator<Entry<String, MQProducerInner>> it = this.producerTable.entrySet().iterator();
             while (it.hasNext() && !result) {
@@ -851,6 +890,7 @@ public class MQClientInstance {
             }
         }
 
+        // 消费者检查指定topic的路由新是否ok
         {
             Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
             while (it.hasNext() && !result) {
