@@ -167,6 +167,9 @@ public class MQClientInstance {
     public static TopicPublishInfo topicRouteData2TopicPublishInfo(final String topic, final TopicRouteData route) {
         TopicPublishInfo info = new TopicPublishInfo();
         info.setTopicRouteData(route);
+        // 判断是否是顺序消息，这里有个约定，顺序消息要定义Broker的顺序，格式是：brokerName:queueNum，多个按照分号分隔，
+        // 例如broker-a:4;broker-b:4
+        // 下面按照这个规则来解析顺序配置，并设置orderTopic为true
         if (route.getOrderTopicConf() != null && route.getOrderTopicConf().length() > 0) {
             String[] brokers = route.getOrderTopicConf().split(";");
             for (String broker : brokers) {
@@ -180,11 +183,15 @@ public class MQClientInstance {
 
             info.setOrderTopic(true);
         } else {
+            // 非顺序消息配置走这里的逻辑
             List<QueueData> qds = route.getQueueDatas();
+            // 对list中的QueueData进行排序，排序的字段是QueueData#brokerName，也就是按照brokerName来进行排序
             Collections.sort(qds);
             for (QueueData qd : qds) {
+                // 循环遍历每一个QueueData，如果当前QueueData没有写权限，则继续遍历下一个QueueData
                 if (PermName.isWriteable(qd.getPerm())) {
                     BrokerData brokerData = null;
+                    // 根据QueueData中的brokerName来找BrokerData
                     for (BrokerData bd : route.getBrokerDatas()) {
                         if (bd.getBrokerName().equals(qd.getBrokerName())) {
                             brokerData = bd;
@@ -192,14 +199,17 @@ public class MQClientInstance {
                         }
                     }
 
+                    // 如果没有找到BrokerData则遍历下一个QueueData
                     if (null == brokerData) {
                         continue;
                     }
 
+                    // 如果找到了BrokerData，但是该Broker没有主节点，也就是brokerId=0的节点，则也遍历下一个QueueData
                     if (!brokerData.getBrokerAddrs().containsKey(MixAll.MASTER_ID)) {
                         continue;
                     }
 
+                    // 如果最终都符合要求，则根据可写的Queue数量，来生成MessageQueue，并设置到List<MessageQueue>中
                     for (int i = 0; i < qd.getWriteQueueNums(); i++) {
                         MessageQueue mq = new MessageQueue(topic, qd.getBrokerName(), i);
                         info.getMessageQueueList().add(mq);
@@ -207,6 +217,7 @@ public class MQClientInstance {
                 }
             }
 
+            // 这是非顺序消息
             info.setOrderTopic(false);
         }
 
