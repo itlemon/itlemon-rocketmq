@@ -26,6 +26,9 @@ public class MQFaultStrategy {
     private final static InternalLogger log = ClientLogger.getLog();
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
 
+    /**
+     * 是否开启Broker故障延迟机制，默认值为false
+     */
     private boolean sendLatencyFaultEnable = false;
 
     private long[] latencyMax = {50L, 100L, 550L, 1000L, 2000L, 3000L, 15000L};
@@ -56,6 +59,11 @@ public class MQFaultStrategy {
     }
 
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
+        // 选择一个消息队列去发送消息的时候，这里有两个选择：
+        // 1.根据配置，是否启用Broker故障延迟机制来选择消息队列
+        // 2.不启用Broker故障延迟机制，那么在选择消息队列的时候直接规避上一次发送失败的Broker
+
+        // 如果Broker故障延迟机制设置为true，那么在选择消息队列的时候将使用故障延迟机制
         if (this.sendLatencyFaultEnable) {
             try {
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
@@ -91,6 +99,7 @@ public class MQFaultStrategy {
             return tpInfo.selectOneMessageQueue();
         }
 
+        // 如果Broker故障延迟机制没有启用，那么在选择消息队列的时候将规避上一次发送失败的Broker，因为上一次发送失败本次发送还是大概率失败
         return tpInfo.selectOneMessageQueue(lastBrokerName);
     }
 
@@ -103,8 +112,9 @@ public class MQFaultStrategy {
 
     private long computeNotAvailableDuration(final long currentLatency) {
         for (int i = latencyMax.length - 1; i >= 0; i--) {
-            if (currentLatency >= latencyMax[i])
+            if (currentLatency >= latencyMax[i]) {
                 return this.notAvailableDuration[i];
+            }
         }
 
         return 0;
