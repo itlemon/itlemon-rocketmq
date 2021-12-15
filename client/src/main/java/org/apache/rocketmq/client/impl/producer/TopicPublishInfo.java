@@ -97,7 +97,7 @@ public class TopicPublishInfo {
      */
     public MessageQueue selectOneMessageQueue(final String lastBrokerName) {
         if (lastBrokerName == null) {
-            // 直接按照轮询的形式选择队列
+            // lastBrokerName == null说明是第一次选择队列，直接按照轮询的形式选择队列
             return selectOneMessageQueue();
         } else {
             // 如果上一次发送消息失败，那么在这类将规避掉失败的Broker上的消息队列，因为上一次失败，本次失败的概率还是很大的
