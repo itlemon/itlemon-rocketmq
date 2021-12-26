@@ -66,7 +66,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
     @Override
     public String pickOneAtLeast() {
         final Enumeration<FaultItem> elements = this.faultItemTable.elements();
-        List<FaultItem> tmpList = new LinkedList<FaultItem>();
+        List<FaultItem> tmpList = new LinkedList<>();
         while (elements.hasMoreElements()) {
             final FaultItem faultItem = elements.nextElement();
             tmpList.add(faultItem);

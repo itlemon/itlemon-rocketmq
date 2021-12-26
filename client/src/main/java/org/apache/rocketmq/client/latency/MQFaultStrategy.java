@@ -22,6 +22,9 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 
+/**
+ * @author itlemon
+ */
 public class MQFaultStrategy {
     private final static InternalLogger log = ClientLogger.getLog();
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
@@ -66,6 +69,7 @@ public class MQFaultStrategy {
         // 如果Broker故障延迟机制设置为true，那么在选择消息队列的时候将使用故障延迟机制
         if (this.sendLatencyFaultEnable) {
             try {
+                // 在故障延迟机制里，首先轮询选择一个消息队列
                 int index = tpInfo.getSendWhichQueue().getAndIncrement();
                 for (int i = 0; i < tpInfo.getMessageQueueList().size(); i++) {
                     int pos = Math.abs(index++) % tpInfo.getMessageQueueList().size();
@@ -73,6 +77,11 @@ public class MQFaultStrategy {
                         pos = 0;
                     }
                     MessageQueue mq = tpInfo.getMessageQueueList().get(pos);
+
+                    // 判断一下选择的消息队列是否可用，如果可用，将进行进一步判断：
+                    // 如果本次选择队列是第一次选择，那么也就是lastBrokerName == null成立，那么直接返回该可用的消息队列；
+                    // 如果本次选择队列不是第一次选择，那么之前说明发送失败了，所以lastBrokerName一定不为null，如果本次
+                    // 选择的消息队列名称正好和lastBrokerName一致，说明故障的Broker已经恢复，直接返回该消息队列即可。
                     if (latencyFaultTolerance.isAvailable(mq.getBrokerName())) {
                         if (null == lastBrokerName || mq.getBrokerName().equals(lastBrokerName)) {
                             return mq;
@@ -80,6 +89,7 @@ public class MQFaultStrategy {
                     }
                 }
 
+                // 尝试从规避的Broker中找到一个可用的Broker，如果没有找到，将返回null
                 final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
                 int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
                 if (writeQueueNums > 0) {
